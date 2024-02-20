@@ -96,6 +96,40 @@ deploy:
         --namespace formance-system \
         --set gateway.fallback=https://console.$user.$tld
 
+deploy-local:
+    LOCALLY
+    WAIT
+        BUILD --pass-args +sources
+    END
+    FROM +sources
+    RUN apk add openssl
+    RUN curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+    RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    RUN install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+    ARG TAG=v5.6.0
+    RUN curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=$tag bash
+    WORKDIR helm
+    LET tag=$(tar cf - /src | sha1sum | awk '{print $1}')
+    WAIT
+        BUILD --pass-args +build-image --tag=$tag
+    END
+    FROM earthly/dind:alpine-3.19-docker-25.0.2-r0
+    COPY --pass-args (+helm-update/helm) helm
+    RUN --mount helm upgrade --namespace formance-system --install formance-operator \
+        --wait \
+        --create-namespace \
+        --create-namespace \
+        --set image.tag=$tag .
+
+    WORKDIR /
+    COPY .earthly .earthly
+    WORKDIR .earthly
+    RUN kubectl get versions default || kubectl apply -f k8s-versions.yaml
+    ARG user
+    RUN --secret tld helm upgrade --install operator-configuration ./configuration \
+        --namespace formance-system \
+        --set gateway.fallback=https://console.$user.$tld
+
 lint:
     FROM core+builder-image
     COPY (+sources/*) /src

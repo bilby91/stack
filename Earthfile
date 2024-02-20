@@ -173,6 +173,14 @@ tidy: # Run tidy on all the components
     END
     BUILD --pass-args ./tests/integration+tidy
 
+create-k3d-cluster:
+    LOCALLY
+    ARG TAG=v5.6.0
+    WORKDIR ./tools/k3d/integration
+    RUN curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=$tag bash
+    RUN k3d cluster create formance --config ./config.yaml
+
+
 tests:
     LOCALLY
     BUILD --pass-args +tests-all
