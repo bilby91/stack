@@ -40,7 +40,7 @@ func NatsModule(url, serviceName string, natsOptions ...nats.Option) fx.Option {
 	}
 	return fx.Options(
 		fx.Provide(NewNatsConn),
-		fx.Provide(newNatsDefaultCallbacks),
+		fx.Provide(NewNatsDefaultCallbacks),
 		fx.Provide(NewNatsPublisherWithConn),
 		fx.Provide(NewNatsSubscriberWithConn),
 		fx.Provide(func(natsCallbacks NATSCallbacks) wNats.PublisherConfig {
@@ -105,7 +105,7 @@ type NatsDefaultCallbacks struct {
 	shutdowner fx.Shutdowner
 }
 
-func newNatsDefaultCallbacks(logger logging.Logger, shutdowner fx.Shutdowner) NATSCallbacks {
+func NewNatsDefaultCallbacks(logger logging.Logger, shutdowner fx.Shutdowner) NATSCallbacks {
 	return &NatsDefaultCallbacks{
 		logger:     logger,
 		shutdowner: shutdowner,
