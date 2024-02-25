@@ -106,43 +106,43 @@ type NATSCallbacks interface {
 	AsyncErrorCB(nc *nats.Conn, sub *nats.Subscription, err error)
 }
 
-type natsDefaultCallbacks struct {
+type NatsDefaultCallbacks struct {
 	logger     logging.Logger
 	shutdowner fx.Shutdowner
 }
 
 func newNatsDefaultCallbacks(logger logging.Logger, shutdowner fx.Shutdowner) NATSCallbacks {
-	return &natsDefaultCallbacks{
+	return &NatsDefaultCallbacks{
 		logger:     logger,
 		shutdowner: shutdowner,
 	}
 }
 
-func (c *natsDefaultCallbacks) ClosedCB(nc *nats.Conn) {
+func (c *NatsDefaultCallbacks) ClosedCB(nc *nats.Conn) {
 	c.logger.Infof("nats connection closed: %s", nc.Opts.Name)
 	c.shutdowner.Shutdown()
 }
 
-func (c *natsDefaultCallbacks) DisconnectedCB(nc *nats.Conn) {
+func (c *NatsDefaultCallbacks) DisconnectedCB(nc *nats.Conn) {
 	c.logger.Infof("nats connection disconnected: %s", nc.Opts.Name)
 }
 
-func (c *natsDefaultCallbacks) DiscoveredServersCB(nc *nats.Conn) {
+func (c *NatsDefaultCallbacks) DiscoveredServersCB(nc *nats.Conn) {
 	c.logger.Infof("nats server discovered: %s", nc.Opts.Name)
 }
 
-func (c *natsDefaultCallbacks) ReconnectedCB(nc *nats.Conn) {
+func (c *NatsDefaultCallbacks) ReconnectedCB(nc *nats.Conn) {
 	c.logger.Infof("nats connection reconnected: %s", nc.Opts.Name)
 }
 
-func (c *natsDefaultCallbacks) DisconnectedErrCB(nc *nats.Conn, err error) {
+func (c *NatsDefaultCallbacks) DisconnectedErrCB(nc *nats.Conn, err error) {
 	c.logger.Errorf("nats connection disconnected error for %s: %v", nc.Opts.Name, err)
 }
 
-func (c *natsDefaultCallbacks) ConnectedCB(nc *nats.Conn) {
+func (c *NatsDefaultCallbacks) ConnectedCB(nc *nats.Conn) {
 	c.logger.Infof("nats connection done: %s", nc.Opts.Name)
 }
 
-func (c *natsDefaultCallbacks) AsyncErrorCB(nc *nats.Conn, sub *nats.Subscription, err error) {
+func (c *NatsDefaultCallbacks) AsyncErrorCB(nc *nats.Conn, sub *nats.Subscription, err error) {
 	c.logger.Errorf("nats async error for %s with subject %s: %v", nc.Opts.Name, sub.Subject, err)
 }
