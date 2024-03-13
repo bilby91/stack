@@ -20,11 +20,11 @@ func GetDefaultLogger(w io.Writer) logging.Logger {
 	var formatter logrus.Formatter
 	if viper.GetBool(JsonFormattingLoggerFlag) {
 		jsonFormatter := &logrus.JSONFormatter{}
-		jsonFormatter.TimestampFormat = "2024-03-13T11:40:08.000000"
+		// jsonFormatter.TimestampFormat = "2024-03-13T11:40:08.000000"
 		formatter = jsonFormatter
 	} else {
 		textFormatter := new(logrus.TextFormatter)
-		textFormatter.TimestampFormat = "2024-03-13T11:40:08.000000"
+		// textFormatter.TimestampFormat = "2024-03-13T11:40:08.000000"
 		textFormatter.FullTimestamp = true
 		formatter = textFormatter
 	}
