@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 7eac0a45-60a2-40bb-9e85-26bd77ec2a6d
 management:
-  docChecksum: d11ae6dcb5a32c2a80fa6ad166fb3a06
+  docChecksum: 9de86048fa1a298b48a8047f03e13abc
   docVersion: v0.0.0
   speakeasyVersion: internal
   generationVersion: 2.237.2
@@ -112,7 +112,6 @@ generatedFiles:
   - /pkg/models/operations/listtriggers.go
   - /pkg/models/operations/listtriggersoccurrences.go
   - /pkg/models/operations/listworkflows.go
-  - /pkg/models/operations/orchestrationgetserverinfo.go
   - /pkg/models/operations/readtrigger.go
   - /pkg/models/operations/runworkflow.go
   - /pkg/models/operations/sendevent.go
@@ -125,7 +124,6 @@ generatedFiles:
   - /pkg/models/operations/v2getinstance.go
   - /pkg/models/operations/v2getinstancehistory.go
   - /pkg/models/operations/v2getinstancestagehistory.go
-  - /pkg/models/operations/v2getserverinfo.go
   - /pkg/models/operations/v2getworkflow.go
   - /pkg/models/operations/v2listinstances.go
   - /pkg/models/operations/v2listtriggers.go
@@ -183,7 +181,6 @@ generatedFiles:
   - /pkg/models/operations/listpolicies.go
   - /pkg/models/operations/listreconciliations.go
   - /pkg/models/operations/reconcile.go
-  - /pkg/models/operations/reconciliationgetserverinfo.go
   - /pkg/models/operations/search.go
   - /pkg/models/operations/searchgetserverinfo.go
   - /pkg/models/operations/confirmhold.go
@@ -362,7 +359,6 @@ generatedFiles:
   - /pkg/models/shared/listtriggersoccurrencesresponse.go
   - /pkg/models/shared/triggeroccurrence.go
   - /pkg/models/shared/listworkflowsresponse.go
-  - /pkg/models/shared/serverinfo.go
   - /pkg/models/shared/readtriggerresponse.go
   - /pkg/models/shared/runworkflowresponse.go
   - /pkg/models/shared/v2testtriggerresponse.go
@@ -427,7 +423,6 @@ generatedFiles:
   - /pkg/models/shared/v2creditwalletrequest.go
   - /pkg/models/shared/v2activitycreatetransaction.go
   - /pkg/models/shared/v2activityconfirmhold.go
-  - /pkg/models/shared/v2serverinfo.go
   - /pkg/models/shared/v2getworkflowresponse.go
   - /pkg/models/shared/v2listrunsresponse.go
   - /pkg/models/shared/v2listtriggersresponse.go
@@ -496,6 +491,7 @@ generatedFiles:
   - /pkg/models/shared/transferinitiationscursor.go
   - /pkg/models/shared/paymentsaccountresponse.go
   - /pkg/models/shared/paymentsaccount.go
+  - /pkg/models/shared/serverinfo.go
   - /pkg/models/shared/accountscursor.go
   - /pkg/models/shared/connectorconfigresponse.go
   - /pkg/models/shared/reversetransferinitiationrequest.go
@@ -665,7 +661,6 @@ generatedFiles:
   - docs/pkg/models/operations/listtriggersoccurrencesrequest.md
   - docs/pkg/models/operations/listtriggersoccurrencesresponse.md
   - docs/pkg/models/operations/listworkflowsresponse.md
-  - docs/pkg/models/operations/orchestrationgetserverinforesponse.md
   - docs/pkg/models/operations/readtriggerrequest.md
   - docs/pkg/models/operations/readtriggerresponse.md
   - docs/pkg/models/operations/runworkflowrequest.md
@@ -689,7 +684,6 @@ generatedFiles:
   - docs/pkg/models/operations/v2getinstancehistoryresponse.md
   - docs/pkg/models/operations/v2getinstancestagehistoryrequest.md
   - docs/pkg/models/operations/v2getinstancestagehistoryresponse.md
-  - docs/pkg/models/operations/v2getserverinforesponse.md
   - docs/pkg/models/operations/v2getworkflowrequest.md
   - docs/pkg/models/operations/v2getworkflowresponse.md
   - docs/pkg/models/operations/v2listinstancesrequest.md
@@ -795,7 +789,6 @@ generatedFiles:
   - docs/pkg/models/operations/listreconciliationsresponse.md
   - docs/pkg/models/operations/reconcilerequest.md
   - docs/pkg/models/operations/reconcileresponse.md
-  - docs/pkg/models/operations/reconciliationgetserverinforesponse.md
   - docs/pkg/models/operations/searchresponse.md
   - docs/pkg/models/operations/searchgetserverinforesponse.md
   - docs/pkg/models/operations/confirmholdrequest.md
@@ -1029,7 +1022,6 @@ generatedFiles:
   - docs/pkg/models/shared/listtriggersoccurrencesresponse.md
   - docs/pkg/models/shared/triggeroccurrence.md
   - docs/pkg/models/shared/listworkflowsresponse.md
-  - docs/pkg/models/shared/serverinfo.md
   - docs/pkg/models/shared/readtriggerresponse.md
   - docs/pkg/models/shared/runworkflowresponse.md
   - docs/pkg/models/shared/v2testtriggerresponse.md
@@ -1103,7 +1095,6 @@ generatedFiles:
   - docs/pkg/models/shared/v2creditwalletrequest.md
   - docs/pkg/models/shared/v2activitycreatetransaction.md
   - docs/pkg/models/shared/v2activityconfirmhold.md
-  - docs/pkg/models/shared/v2serverinfo.md
   - docs/pkg/models/shared/v2getworkflowresponse.md
   - docs/pkg/models/shared/v2listrunsresponsecursor.md
   - docs/pkg/models/shared/v2listrunsresponse.md
@@ -1210,6 +1201,7 @@ generatedFiles:
   - docs/pkg/models/shared/paymentsaccountresponse.md
   - docs/pkg/models/shared/paymentsaccountraw.md
   - docs/pkg/models/shared/paymentsaccount.md
+  - docs/pkg/models/shared/serverinfo.md
   - docs/pkg/models/shared/cursor.md
   - docs/pkg/models/shared/accountscursor.md
   - docs/pkg/models/shared/connectorconfigresponse.md

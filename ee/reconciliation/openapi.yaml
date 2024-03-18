@@ -22,6 +22,8 @@ paths:
       summary: Create a policy
       tags:
         - Reconciliation
+        - Policy
+      x-speakeasy-group: reconciliation
       operationId: createPolicy
       description: Create a policy
       requestBody:
@@ -36,6 +38,8 @@ paths:
       operationId: listPolicies
       tags:
         - Reconciliation
+        - Policy
+      x-speakeasy-group: reconciliation
       parameters:
         - $ref: '#/components/parameters/PageSize'
         - $ref: '#/components/parameters/Cursor'
@@ -51,6 +55,8 @@ paths:
       operationId: deletePolicy
       tags:
         - Reconciliation
+        - Policy
+      x-speakeasy-group: reconciliation
       description: Delete a policy by its id.
       parameters:
         - $ref: '#/components/parameters/PolicyID'
@@ -63,6 +69,8 @@ paths:
       summary: Get a policy
       tags:
         - Reconciliation
+        - Policy
+      x-speakeasy-group: reconciliation
       operationId: getPolicy
       parameters:
         - $ref: '#/components/parameters/PolicyID'
@@ -77,6 +85,8 @@ paths:
       summary: Reconcile using a policy
       tags:
         - Reconciliation
+        - Policy
+      x-speakeasy-group: reconciliation
       operationId: reconcile
       description: Reconcile using a policy
       parameters:
@@ -95,6 +105,7 @@ paths:
       operationId: listReconciliations
       tags:
         - Reconciliation
+      x-speakeasy-group: reconciliation
       parameters:
         - $ref: '#/components/parameters/PageSize'
         - $ref: '#/components/parameters/Cursor'
@@ -109,6 +120,7 @@ paths:
       summary: Get a reconciliation
       tags:
         - Reconciliation
+      x-speakeasy-group: reconciliation
       operationId: getReconciliation
       parameters:
         - $ref: '#/components/parameters/ReconciliationID'

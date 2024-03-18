@@ -11,6 +11,7 @@ paths:
       operationId: getServerInfo
       tags:
         - Payments
+      x-speakeasy-group: payments
       responses:
         200:
           $ref: '#/components/responses/ServerInfo'
@@ -20,6 +21,7 @@ paths:
       summary: Create a payment
       tags:
         - Payments
+      x-speakeasy-group: payments
       operationId: createPayment
       description: Create a payment
       requestBody:
@@ -32,6 +34,7 @@ paths:
       operationId: listPayments
       tags:
         - Payments
+      x-speakeasy-group: payments
       parameters:
         - $ref: '#/components/parameters/PageSize'
         - $ref: '#/components/parameters/Cursor'
@@ -45,6 +48,7 @@ paths:
       summary: Get a payment
       tags:
         - Payments
+      x-speakeasy-group: payments
       operationId: getPayment
       parameters:
         - $ref: '#/components/parameters/PaymentId'
@@ -57,6 +61,7 @@ paths:
       summary: Update metadata
       tags:
         - Payments
+      x-speakeasy-group: payments
       operationId: updateMetadata
       parameters:
         - $ref: '#/components/parameters/PaymentId'
@@ -72,6 +77,8 @@ paths:
       operationId: listTransferInitiations
       tags:
         - Payments
+        - TransferInitiations
+      x-speakeasy-group: payments
       parameters:
         - $ref: '#/components/parameters/PageSize'
         - $ref: '#/components/parameters/Cursor'
@@ -84,6 +91,8 @@ paths:
       summary: Create a TransferInitiation
       tags:
         - Payments
+        - TransferInitiations
+      x-speakeasy-group: payments
       operationId: createTransferInitiation
       description: Create a transfer initiation
       requestBody:
@@ -97,6 +106,8 @@ paths:
       summary: Get a transfer initiation
       tags:
         - Payments
+        - TransferInitiations
+      x-speakeasy-group: payments
       operationId: getTransferInitiation
       parameters:
         - $ref: '#/components/parameters/TransferId'
@@ -108,6 +119,8 @@ paths:
       operationId: deleteTransferInitiation
       tags:
         - Payments
+        - TransferInitiations
+      x-speakeasy-group: payments
       description: Delete a transfer initiation by its id.
       parameters:
         - $ref: '#/components/parameters/TransferId'
@@ -120,6 +133,8 @@ paths:
       summary: Update the status of a transfer initiation
       tags:
         - Payments
+        - TransferInitiations
+      x-speakeasy-group: payments
       operationId: udpateTransferInitiationStatus
       description: Update a transfer initiation status
       parameters:
@@ -135,6 +150,8 @@ paths:
       summary: Reverse a transfer initiation
       tags:
         - Payments
+        - TransferInitiations
+      x-speakeasy-group: payments
       operationId: reverseTransferInitiation
       description: Reverse transfer initiation
       parameters:
@@ -150,6 +167,8 @@ paths:
       summary: Retry a failed transfer initiation
       tags:
         - Payments
+        - TransferInitiations
+      x-speakeasy-group: payments
       operationId: retryTransferInitiation
       description: Retry a failed transfer initiation
       parameters:
@@ -164,6 +183,8 @@ paths:
       operationId: listPools
       tags:
         - Payments
+        - Pools
+      x-speakeasy-group: payments
       parameters:
         - $ref: '#/components/parameters/PageSize'
         - $ref: '#/components/parameters/Cursor'
@@ -176,6 +197,8 @@ paths:
       summary: Create a Pool
       tags:
         - Payments
+        - Pools
+      x-speakeasy-group: payments
       operationId: createPool
       description: Create a Pool
       requestBody:
@@ -188,6 +211,8 @@ paths:
       summary: Get a Pool
       tags:
         - Payments
+        - Pools
+      x-speakeasy-group: payments
       operationId: getPool
       parameters:
         - $ref: '#/components/parameters/PoolId'
@@ -199,6 +224,8 @@ paths:
       operationId: deletePool
       tags:
         - Payments
+        - Pools
+      x-speakeasy-group: payments
       description: Delete a pool by its id.
       parameters:
         - $ref: '#/components/parameters/PoolId'
@@ -210,6 +237,8 @@ paths:
       summary: Add an account to a pool
       tags:
         - Payments
+        - Pools
+      x-speakeasy-group: payments
       operationId: addAccountToPool
       description: Add an account to a pool
       parameters:
@@ -225,6 +254,8 @@ paths:
       operationId: removeAccountFromPool
       tags:
         - Payments
+        - Pools
+      x-speakeasy-group: payments
       description: Remove an account from a pool by its id.
       parameters:
         - $ref: '#/components/parameters/PoolId'
@@ -238,6 +269,8 @@ paths:
       operationId: getPoolBalances
       tags:
         - Payments
+        - Pools
+      x-speakeasy-group: payments
       parameters:
         - $ref: '#/components/parameters/PoolId'
         - name: at
@@ -258,6 +291,7 @@ paths:
       operationId: listAccounts
       tags:
         - Payments
+      x-speakeasy-group: payments
       parameters:
         - $ref: '#/components/parameters/PageSize'
         - $ref: '#/components/parameters/Cursor'
@@ -277,6 +311,7 @@ paths:
       summary: Get an account
       tags:
         - Payments
+      x-speakeasy-group: payments
       operationId: getAccount
       parameters:
         - $ref: '#/components/parameters/AccountId'
@@ -290,6 +325,7 @@ paths:
       operationId: getAccountBalances
       tags:
         - Payments
+      x-speakeasy-group: payments
       parameters:
         - $ref: '#/components/parameters/AccountId'
         - name: limit
@@ -337,6 +373,8 @@ paths:
       summary: Create a BankAccount in Payments and on the PSP
       tags:
         - Payments
+        - BankAccounts
+      x-speakeasy-group: payments
       operationId: createBankAccount
       description: Create a bank account in Payments and on the PSP.
       requestBody:
@@ -349,6 +387,8 @@ paths:
       operationId: listBankAccounts
       tags:
         - Payments
+        - BankAccounts
+      x-speakeasy-group: payments
       parameters:
         - $ref: '#/components/parameters/PageSize'
         - $ref: '#/components/parameters/Cursor'
@@ -363,6 +403,8 @@ paths:
       summary: Get a bank account created by user on Formance
       tags:
         - Payments
+        - BankAccounts
+      x-speakeasy-group: payments
       operationId: getBankAccount
       parameters:
         - $ref: '#/components/parameters/BankAccountId'
@@ -375,6 +417,8 @@ paths:
       summary: Forward a bank account to a connector
       tags:
         - Payments
+        - BankAccounts
+      x-speakeasy-group: payments
       operationId: forwardBankAccount
       parameters:
         - $ref: '#/components/parameters/BankAccountId'
@@ -389,6 +433,8 @@ paths:
       summary: Update metadata of a bank account
       tags:
         - Payments
+        - BankAccounts
+      x-speakeasy-group: payments
       operationId: updateBankAccountMetadata
       parameters:
         - $ref: '#/components/parameters/BankAccountId'
@@ -404,6 +450,8 @@ paths:
       operationId: listAllConnectors
       tags:
         - Payments
+        - Connectors
+      x-speakeasy-group: payments
       description: List all installed connectors.
       responses:
         '200':
@@ -415,6 +463,8 @@ paths:
       operationId: listConfigsAvailableConnectors
       tags:
         - Payments
+        - Connectors
+      x-speakeasy-group: payments
       description: List the configs of each available connector.
       responses:
         '200':
@@ -425,6 +475,8 @@ paths:
       summary: Install a connector
       tags:
         - Payments
+        - Connectors
+      x-speakeasy-group: payments
       operationId: installConnector
       description: Install a connector by its name and config.
       parameters:
@@ -440,6 +492,8 @@ paths:
       operationId: uninstallConnector
       tags:
         - Payments
+        - Connectors
+      x-speakeasy-group: payments
       description: Uninstall a connector by its name.
       parameters:
         - $ref: '#/components/parameters/Connector'
@@ -452,6 +506,8 @@ paths:
       operationId: uninstallConnectorV1
       tags:
         - Payments
+        - Connectors
+      x-speakeasy-group: payments
       description: Uninstall a connector by its name.
       parameters:
         - $ref: '#/components/parameters/Connector'
@@ -467,6 +523,8 @@ paths:
       operationId: readConnectorConfig
       tags:
         - Payments
+        - Connectors
+      x-speakeasy-group: payments
       description: Read connector config
       parameters:
         - $ref: '#/components/parameters/Connector'
@@ -479,6 +537,8 @@ paths:
       operationId: updateConnectorConfigV1
       tags:
         - Payments
+        - Connectors
+      x-speakeasy-group: payments
       description: Update connector config
       parameters:
         - $ref: '#/components/parameters/Connector'
@@ -493,6 +553,8 @@ paths:
       operationId: readConnectorConfigV1
       tags:
         - Payments
+        - Connectors
+      x-speakeasy-group: payments
       description: Read connector config
       parameters:
         - $ref: '#/components/parameters/Connector'
@@ -508,6 +570,8 @@ paths:
       operationId: resetConnector
       tags:
         - Payments
+        - Connectors
+      x-speakeasy-group: payments
       description: |
         Reset a connector by its name.
         It will remove the connector and ALL PAYMENTS generated with it.
@@ -522,6 +586,8 @@ paths:
       operationId: resetConnectorV1
       tags:
         - Payments
+        - Connectors
+      x-speakeasy-group: payments
       description: |
         Reset a connector by its name.
         It will remove the connector and ALL PAYMENTS generated with it.
@@ -538,6 +604,8 @@ paths:
       deprecated: true
       tags:
         - Payments
+        - Connectors
+      x-speakeasy-group: payments
       operationId: listConnectorTasks
       description: List all tasks associated with this connector.
       parameters:
@@ -552,6 +620,8 @@ paths:
       summary: List tasks from a connector
       tags:
         - Payments
+        - Connectors
+      x-speakeasy-group: payments
       operationId: listConnectorTasksV1
       description: List all tasks associated with this connector.
       parameters:
@@ -569,6 +639,8 @@ paths:
       deprecated: true
       tags:
         - Payments
+        - Connectors
+      x-speakeasy-group: payments
       operationId: getConnectorTask
       description: Get a specific task associated to the connector.
       parameters:
@@ -582,6 +654,8 @@ paths:
       summary: Read a specific task of the connector
       tags:
         - Payments
+        - Connectors
+      x-speakeasy-group: payments
       operationId: getConnectorTaskV1
       description: Get a specific task associated to the connector.
       parameters:
@@ -597,6 +671,8 @@ paths:
       summary: Transfer funds between Connector accounts
       tags:
         - Payments
+        - Connectors
+      x-speakeasy-group: payments
       operationId: connectorsTransfer
       description: Execute a transfer between two accounts.
       parameters:

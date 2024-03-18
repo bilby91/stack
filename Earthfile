@@ -56,10 +56,10 @@ openapi:
     COPY . /src
     WORKDIR /src
     FOR component IN $(cd ./components && ls -d */)
-        COPY (./components/$component+openapi/src/components/$component) /src/components/$component
+        COPY --if-exists (./components/$component+openapi/src/components/$component) /src/components/$component
     END
     FOR component IN $(cd ./ee && ls -d */)
-        COPY (./ee/$component+openapi/src/ee/$component) /src/ee/$component
+        COPY --if-exists (./ee/$component+openapi/src/ee/$component) /src/ee/$component
     END
     SAVE ARTIFACT /src
 

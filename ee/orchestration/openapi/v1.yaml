@@ -27,6 +27,8 @@ paths:
       description: List triggers
       tags:
       - Orchestration
+      - Triggers
+      x-speakeasy-group: orchestration
       responses:
         200:
           description: List of triggers
@@ -42,6 +44,8 @@ paths:
       description: Create trigger
       tags:
       - Orchestration
+      - Triggers
+      x-speakeasy-group: orchestration
       requestBody:
         content:
           application/json:
@@ -70,6 +74,8 @@ paths:
       description: Read trigger
       tags:
         - Orchestration
+        - Triggers
+      x-speakeasy-group: orchestration
       responses:
         200:
           description: A specific trigger
@@ -85,6 +91,8 @@ paths:
       description: Read trigger
       tags:
       - Orchestration
+      - Triggers
+      x-speakeasy-group: orchestration
       responses:
         204:
           description: Trigger deleted
@@ -104,6 +112,8 @@ paths:
       description: List triggers occurrences
       tags:
         - Orchestration
+        - Triggers
+      x-speakeasy-group: orchestration
       responses:
         200:
           description: List of triggers occurrences
@@ -120,6 +130,8 @@ paths:
       description: List registered workflows
       tags:
       - Orchestration
+      - Workflows
+      x-speakeasy-group: orchestration
       responses:
         200:
           description: List of workflows
@@ -135,6 +147,8 @@ paths:
       description: Create a workflow
       tags:
       - Orchestration
+      - Workflows
+      x-speakeasy-group: orchestration
       requestBody:
         content:
           application/json:
@@ -163,6 +177,8 @@ paths:
       summary: Get a flow by id
       tags:
       - Orchestration
+      - Workflows
+      x-speakeasy-group: orchestration
       description: Get a flow by id
       operationId: getWorkflow
       responses:
@@ -178,6 +194,8 @@ paths:
       summary: Delete a flow by id
       tags:
       - Orchestration
+      - Workflows
+      x-speakeasy-group: orchestration
       description: Delete a flow by id
       operationId: deleteWorkflow
       responses:
@@ -208,6 +226,8 @@ paths:
           type: boolean
       tags:
       - Orchestration
+      - Workflows
+      x-speakeasy-group: orchestration
       requestBody:
         content:
           application/json:
@@ -245,6 +265,8 @@ paths:
         required: false
       tags:
       - Orchestration
+      - Instances
+      x-speakeasy-group: orchestration
       responses:
         200:
           description: List of workflow instances
@@ -270,6 +292,8 @@ paths:
       operationId: getInstance
       tags:
       - Orchestration
+      - Instances
+      x-speakeasy-group: orchestration
       responses:
         default:
           $ref: '#/components/responses/ErrorResponse'
@@ -295,6 +319,8 @@ paths:
       operationId: sendEvent
       tags:
       - Orchestration
+      - Instances
+      x-speakeasy-group: orchestration
       requestBody:
         content:
           application/json:
@@ -326,6 +352,8 @@ paths:
       operationId: cancelEvent
       tags:
       - Orchestration
+      - Instances
+      x-speakeasy-group: orchestration
       responses:
         default:
           $ref: '#/components/responses/ErrorResponse'
@@ -347,6 +375,8 @@ paths:
       operationId: getInstanceHistory
       tags:
       - Orchestration
+      - Instances
+      x-speakeasy-group: orchestration
       responses:
         default:
           $ref: '#/components/responses/ErrorResponse'
@@ -379,6 +409,8 @@ paths:
       operationId: getInstanceStageHistory
       tags:
       - Orchestration
+      - Instances
+      x-speakeasy-group: orchestration
       responses:
         default:
           $ref: '#/components/responses/ErrorResponse'

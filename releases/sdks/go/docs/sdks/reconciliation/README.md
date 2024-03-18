@@ -10,7 +10,6 @@
 * [ListPolicies](#listpolicies) - List policies
 * [ListReconciliations](#listreconciliations) - List reconciliations
 * [Reconcile](#reconcile) - Reconcile using a policy
-* [ReconciliationgetServerInfo](#reconciliationgetserverinfo) - Get server info
 
 ## CreatePolicy
 
@@ -389,55 +388,6 @@ func main() {
 ### Response
 
 **[*operations.ReconcileResponse](../../pkg/models/operations/reconcileresponse.md), error**
-| Error Object       | Status Code        | Content Type       |
-| ------------------ | ------------------ | ------------------ |
-| sdkerrors.SDKError | 4xx-5xx            | */*                |
-
-## ReconciliationgetServerInfo
-
-Get server info
-
-### Example Usage
-
-```go
-package main
-
-import(
-	"github.com/formancehq/formance-sdk-go/v2/pkg/models/shared"
-	"github.com/formancehq/formance-sdk-go/v2"
-	"context"
-	"log"
-)
-
-func main() {
-    s := v2.New(
-        v2.WithSecurity(shared.Security{
-            Authorization: "Bearer <YOUR_ACCESS_TOKEN_HERE>",
-        }),
-    )
-
-    ctx := context.Background()
-    res, err := s.Reconciliation.ReconciliationgetServerInfo(ctx)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    if res.ServerInfo != nil {
-        // handle response
-    }
-}
-```
-
-### Parameters
-
-| Parameter                                             | Type                                                  | Required                                              | Description                                           |
-| ----------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------- |
-| `ctx`                                                 | [context.Context](https://pkg.go.dev/context#Context) | :heavy_check_mark:                                    | The context to use for the request.                   |
-
-
-### Response
-
-**[*operations.ReconciliationgetServerInfoResponse](../../pkg/models/operations/reconciliationgetserverinforesponse.md), error**
 | Error Object       | Status Code        | Content Type       |
 | ------------------ | ------------------ | ------------------ |
 | sdkerrors.SDKError | 4xx-5xx            | */*                |

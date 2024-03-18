@@ -25,6 +25,7 @@ paths:
       description: List triggers
       tags:
         - Orchestration
+        - Triggers
       responses:
         "200":
           description: List of triggers
@@ -40,6 +41,7 @@ paths:
       description: Create trigger
       tags:
         - Orchestration
+        - Triggers
       requestBody:
         content:
           application/json:
@@ -68,6 +70,7 @@ paths:
       description: Read trigger
       tags:
         - Orchestration
+        - Triggers
       responses:
         "200":
           description: A specific trigger
@@ -83,6 +86,7 @@ paths:
       description: Read trigger
       tags:
         - Orchestration
+        - Triggers
       responses:
         "204":
           description: Trigger deleted
@@ -102,6 +106,7 @@ paths:
       description: List triggers occurrences
       tags:
         - Orchestration
+        - Triggers
       responses:
         "200":
           description: List of triggers occurrences
@@ -118,6 +123,7 @@ paths:
       description: List registered workflows
       tags:
         - Orchestration
+        - Workflows
       responses:
         "200":
           description: List of workflows
@@ -133,6 +139,7 @@ paths:
       description: Create a workflow
       tags:
         - Orchestration
+        - Workflows
       requestBody:
         content:
           application/json:
@@ -160,6 +167,7 @@ paths:
       summary: Get a flow by id
       tags:
         - Orchestration
+        - Workflows
       description: Get a flow by id
       operationId: getWorkflow
       responses:
@@ -175,6 +183,7 @@ paths:
       summary: Delete a flow by id
       tags:
         - Orchestration
+        - Workflows
       description: Delete a flow by id
       operationId: deleteWorkflow
       responses:
@@ -204,6 +213,7 @@ paths:
             type: boolean
       tags:
         - Orchestration
+        - Workflows
       requestBody:
         content:
           application/json:
@@ -240,6 +250,7 @@ paths:
           required: false
       tags:
         - Orchestration
+        - Instances
       responses:
         "200":
           description: List of workflow instances
@@ -264,6 +275,7 @@ paths:
       operationId: getInstance
       tags:
         - Orchestration
+        - Instances
       responses:
         "200":
           description: The workflow instance
@@ -288,6 +300,7 @@ paths:
       operationId: sendEvent
       tags:
         - Orchestration
+        - Instances
       requestBody:
         content:
           application/json:
@@ -318,6 +331,7 @@ paths:
       operationId: cancelEvent
       tags:
         - Orchestration
+        - Instances
       responses:
         "204":
           description: No content
@@ -338,6 +352,7 @@ paths:
       operationId: getInstanceHistory
       tags:
         - Orchestration
+        - Instances
       responses:
         "200":
           description: The workflow instance history
@@ -369,6 +384,7 @@ paths:
       operationId: getInstanceStageHistory
       tags:
         - Orchestration
+        - Instances
       responses:
         "200":
           description: The workflow instance stage history
@@ -400,6 +416,7 @@ paths:
       description: List triggers
       tags:
         - Orchestration
+        - Triggers
       responses:
         "200":
           description: List of triggers
@@ -415,6 +432,7 @@ paths:
       description: Create trigger
       tags:
         - Orchestration
+        - Triggers
       requestBody:
         content:
           application/json:
@@ -443,6 +461,7 @@ paths:
       description: Read trigger
       tags:
         - Orchestration
+        - Triggers
       responses:
         "200":
           description: A specific trigger
@@ -458,6 +477,7 @@ paths:
       description: Read trigger
       tags:
         - Orchestration
+        - Triggers
       responses:
         "204":
           description: Trigger deleted
@@ -479,6 +499,7 @@ paths:
       description: Test trigger
       tags:
         - Orchestration
+        - Triggers
       requestBody:
         content:
           application/json:
@@ -508,6 +529,7 @@ paths:
       description: List triggers occurrences
       tags:
         - Orchestration
+        - Triggers
       responses:
         "200":
           description: List of triggers occurrences
@@ -524,6 +546,7 @@ paths:
       description: List registered workflows
       tags:
         - Orchestration
+        - Workflows
       responses:
         "200":
           description: List of workflows
@@ -539,6 +562,7 @@ paths:
       description: Create a workflow
       tags:
         - Orchestration
+        - Workflows
       requestBody:
         content:
           application/json:
@@ -566,6 +590,7 @@ paths:
       summary: Get a flow by id
       tags:
         - Orchestration
+        - Workflows
       description: Get a flow by id
       operationId: v2GetWorkflow
       responses:
@@ -581,6 +606,7 @@ paths:
       summary: Delete a flow by id
       tags:
         - Orchestration
+        - Workflows
       description: Delete a flow by id
       operationId: v2DeleteWorkflow
       responses:
@@ -614,6 +640,7 @@ paths:
             type: boolean
       tags:
         - Orchestration
+        - Workflows
       requestBody:
         content:
           application/json:
@@ -650,6 +677,7 @@ paths:
           required: false
       tags:
         - Orchestration
+        - Instances
       responses:
         "200":
           description: List of workflow instances
@@ -674,6 +702,7 @@ paths:
       operationId: v2GetInstance
       tags:
         - Orchestration
+        - Instances
       responses:
         "200":
           description: The workflow instance
@@ -698,6 +727,7 @@ paths:
       operationId: v2SendEvent
       tags:
         - Orchestration
+        - Instances
       requestBody:
         content:
           application/json:
@@ -728,6 +758,7 @@ paths:
       operationId: v2CancelEvent
       tags:
         - Orchestration
+        - Instances
       responses:
         "204":
           description: No content
@@ -748,6 +779,7 @@ paths:
       operationId: v2GetInstanceHistory
       tags:
         - Orchestration
+        - Instances
       responses:
         "200":
           description: The workflow instance history
@@ -779,6 +811,7 @@ paths:
       operationId: v2GetInstanceStageHistory
       tags:
         - Orchestration
+        - Instances
       responses:
         "200":
           description: The workflow instance stage history
@@ -993,8 +1026,6 @@ components:
       type: object
       required:
         - triggerID
-        - workflowInstanceID
-        - workflowInstance
         - date
         - event
       properties:
@@ -1010,6 +1041,8 @@ components:
         event:
           type: object
           additionalProperties: true
+        error:
+          type: string
     ListTriggersOccurrencesResponse:
       type: object
       properties:

@@ -139,7 +139,6 @@ func main() {
 * [ListTriggers](docs/sdks/orchestration/README.md#listtriggers) - List triggers
 * [ListTriggersOccurrences](docs/sdks/orchestration/README.md#listtriggersoccurrences) - List triggers occurrences
 * [ListWorkflows](docs/sdks/orchestration/README.md#listworkflows) - List registered workflows
-* [OrchestrationgetServerInfo](docs/sdks/orchestration/README.md#orchestrationgetserverinfo) - Get server info
 * [ReadTrigger](docs/sdks/orchestration/README.md#readtrigger) - Read trigger
 * [RunWorkflow](docs/sdks/orchestration/README.md#runworkflow) - Run workflow
 * [SendEvent](docs/sdks/orchestration/README.md#sendevent) - Send an event to a running workflow
@@ -152,7 +151,6 @@ func main() {
 * [V2GetInstance](docs/sdks/orchestration/README.md#v2getinstance) - Get a workflow instance by id
 * [V2GetInstanceHistory](docs/sdks/orchestration/README.md#v2getinstancehistory) - Get a workflow instance history by id
 * [V2GetInstanceStageHistory](docs/sdks/orchestration/README.md#v2getinstancestagehistory) - Get a workflow instance stage history
-* [V2GetServerInfo](docs/sdks/orchestration/README.md#v2getserverinfo) - Get server info
 * [V2GetWorkflow](docs/sdks/orchestration/README.md#v2getworkflow) - Get a flow by id
 * [V2ListInstances](docs/sdks/orchestration/README.md#v2listinstances) - List instances of a workflow
 * [V2ListTriggers](docs/sdks/orchestration/README.md#v2listtriggers) - List triggers
@@ -216,7 +214,6 @@ func main() {
 * [ListPolicies](docs/sdks/reconciliation/README.md#listpolicies) - List policies
 * [ListReconciliations](docs/sdks/reconciliation/README.md#listreconciliations) - List reconciliations
 * [Reconcile](docs/sdks/reconciliation/README.md#reconcile) - Reconcile using a policy
-* [ReconciliationgetServerInfo](docs/sdks/reconciliation/README.md#reconciliationgetserverinfo) - Get server info
 
 ### [Search](docs/sdks/search/README.md)
 

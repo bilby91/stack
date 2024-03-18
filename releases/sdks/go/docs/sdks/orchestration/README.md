@@ -16,7 +16,6 @@
 * [ListTriggers](#listtriggers) - List triggers
 * [ListTriggersOccurrences](#listtriggersoccurrences) - List triggers occurrences
 * [ListWorkflows](#listworkflows) - List registered workflows
-* [OrchestrationgetServerInfo](#orchestrationgetserverinfo) - Get server info
 * [ReadTrigger](#readtrigger) - Read trigger
 * [RunWorkflow](#runworkflow) - Run workflow
 * [SendEvent](#sendevent) - Send an event to a running workflow
@@ -29,7 +28,6 @@
 * [V2GetInstance](#v2getinstance) - Get a workflow instance by id
 * [V2GetInstanceHistory](#v2getinstancehistory) - Get a workflow instance history by id
 * [V2GetInstanceStageHistory](#v2getinstancestagehistory) - Get a workflow instance stage history
-* [V2GetServerInfo](#v2getserverinfo) - Get server info
 * [V2GetWorkflow](#v2getworkflow) - Get a flow by id
 * [V2ListInstances](#v2listinstances) - List instances of a workflow
 * [V2ListTriggers](#v2listtriggers) - List triggers
@@ -728,55 +726,6 @@ func main() {
 | ------------------ | ------------------ | ------------------ |
 | sdkerrors.SDKError | 4xx-5xx            | */*                |
 
-## OrchestrationgetServerInfo
-
-Get server info
-
-### Example Usage
-
-```go
-package main
-
-import(
-	"github.com/formancehq/formance-sdk-go/v2/pkg/models/shared"
-	"github.com/formancehq/formance-sdk-go/v2"
-	"context"
-	"log"
-)
-
-func main() {
-    s := v2.New(
-        v2.WithSecurity(shared.Security{
-            Authorization: "Bearer <YOUR_ACCESS_TOKEN_HERE>",
-        }),
-    )
-
-    ctx := context.Background()
-    res, err := s.Orchestration.OrchestrationgetServerInfo(ctx)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    if res.ServerInfo != nil {
-        // handle response
-    }
-}
-```
-
-### Parameters
-
-| Parameter                                             | Type                                                  | Required                                              | Description                                           |
-| ----------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------- |
-| `ctx`                                                 | [context.Context](https://pkg.go.dev/context#Context) | :heavy_check_mark:                                    | The context to use for the request.                   |
-
-
-### Response
-
-**[*operations.OrchestrationgetServerInfoResponse](../../pkg/models/operations/orchestrationgetserverinforesponse.md), error**
-| Error Object       | Status Code        | Content Type       |
-| ------------------ | ------------------ | ------------------ |
-| sdkerrors.SDKError | 4xx-5xx            | */*                |
-
 ## ReadTrigger
 
 Read trigger
@@ -1431,55 +1380,6 @@ func main() {
 ### Response
 
 **[*operations.V2GetInstanceStageHistoryResponse](../../pkg/models/operations/v2getinstancestagehistoryresponse.md), error**
-| Error Object       | Status Code        | Content Type       |
-| ------------------ | ------------------ | ------------------ |
-| sdkerrors.SDKError | 4xx-5xx            | */*                |
-
-## V2GetServerInfo
-
-Get server info
-
-### Example Usage
-
-```go
-package main
-
-import(
-	"github.com/formancehq/formance-sdk-go/v2/pkg/models/shared"
-	"github.com/formancehq/formance-sdk-go/v2"
-	"context"
-	"log"
-)
-
-func main() {
-    s := v2.New(
-        v2.WithSecurity(shared.Security{
-            Authorization: "Bearer <YOUR_ACCESS_TOKEN_HERE>",
-        }),
-    )
-
-    ctx := context.Background()
-    res, err := s.Orchestration.V2GetServerInfo(ctx)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    if res.V2ServerInfo != nil {
-        // handle response
-    }
-}
-```
-
-### Parameters
-
-| Parameter                                             | Type                                                  | Required                                              | Description                                           |
-| ----------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------- |
-| `ctx`                                                 | [context.Context](https://pkg.go.dev/context#Context) | :heavy_check_mark:                                    | The context to use for the request.                   |
-
-
-### Response
-
-**[*operations.V2GetServerInfoResponse](../../pkg/models/operations/v2getserverinforesponse.md), error**
 | Error Object       | Status Code        | Content Type       |
 | ------------------ | ------------------ | ------------------ |
 | sdkerrors.SDKError | 4xx-5xx            | */*                |

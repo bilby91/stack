@@ -96,6 +96,10 @@ x-tagGroups:
   - name: Payments
     tags:
       - Payments
+      - TransferInitiations
+      - Pools
+      - BankAccounts
+      - Connectors
   - name: Search
     tags:
       - Search
@@ -108,9 +112,13 @@ x-tagGroups:
   - name: Flows
     tags:
       - Orchestration
+      - Workflows
+      - Triggers
+      - Instances
   - name: Reconciliation
     tags:
       - Reconciliation
+      - Policy
 
 paths:
   /versions:
