@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"sync"
 
+	"github.com/antithesishq/antithesis-sdk-go/assert"
 	"github.com/formancehq/stack/libs/go-libs/time"
 
 	storageerrors "github.com/formancehq/ledger/internal/storage/sqlutils"
@@ -140,6 +141,8 @@ func (commander *Commander) exec(ctx context.Context, parameters Parameters, scr
 			return nil, NewErrNoPostings()
 		}
 
+		currentTXID := commander.lastTXID
+
 		tx := ledger.NewTransaction().
 			WithPostings(result.Postings...).
 			WithMetadata(result.Metadata).
@@ -151,6 +154,8 @@ func (commander *Commander) exec(ctx context.Context, parameters Parameters, scr
 		if parameters.IdempotencyKey != "" {
 			log = log.WithIdempotencyKey(parameters.IdempotencyKey)
 		}
+
+		assert.Always(currentTXID.Cmp(commander.lastTXID) < 0, "tx id should be incremented", nil)
 
 		return executionContext.AppendLog(ctx, log)
 	})
