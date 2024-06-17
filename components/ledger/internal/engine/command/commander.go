@@ -155,7 +155,7 @@ func (commander *Commander) exec(ctx context.Context, parameters Parameters, scr
 			log = log.WithIdempotencyKey(parameters.IdempotencyKey)
 		}
 
-		assert.Always(currentTXID.Cmp(commander.lastTXID) < 0, "tx id should be incremented", nil)
+		assert.Always(currentTXID.Cmp(tx.ID) < 0, "tx id should be incremented", nil)
 
 		return executionContext.AppendLog(ctx, log)
 	})
