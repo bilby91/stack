@@ -141,7 +141,7 @@ func (commander *Commander) exec(ctx context.Context, parameters Parameters, scr
 			return nil, NewErrNoPostings()
 		}
 
-		currentTXID := commander.lastTXID
+		currentTXID := big.NewInt(0).Set(commander.lastTXID)
 
 		tx := ledger.NewTransaction().
 			WithPostings(result.Postings...).
