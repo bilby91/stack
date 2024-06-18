@@ -141,7 +141,7 @@ func (commander *Commander) exec(ctx context.Context, parameters Parameters, scr
 			return nil, NewErrNoPostings()
 		}
 
-		currentTXID := big.NewInt(0).Set(commander.lastTXID)
+		currentTXID := commander.lastTXID.String()
 
 		tx := ledger.NewTransaction().
 			WithPostings(result.Postings...).
@@ -155,7 +155,10 @@ func (commander *Commander) exec(ctx context.Context, parameters Parameters, scr
 			log = log.WithIdempotencyKey(parameters.IdempotencyKey)
 		}
 
-		assert.Always(currentTXID.Cmp(tx.ID) < 0, "tx id should be incremented", nil)
+		assert.Always(currentTXID < tx.ID.String(), "tx id should be greater than last tx id", map[string]any{
+			"currentTXID": currentTXID,
+			"tx.ID":       tx.ID.String(),
+		})
 
 		return executionContext.AppendLog(ctx, log)
 	})
