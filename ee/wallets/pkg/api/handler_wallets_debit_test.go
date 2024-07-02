@@ -53,7 +53,7 @@ var walletDebitTestCases = []testCase{
 		},
 		expectedPostTransaction: func(testEnv *testEnv, walletID string, h *wallet.DebitHold) wallet.PostTransaction {
 			return wallet.PostTransaction{
-				Script: &shared.PostTransactionScript{
+				Script: &shared.V2PostTransactionScript{
 					Plain: wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetMainBalanceAccount(walletID)),
 					Vars: map[string]interface{}{
 						"destination": wallet.DefaultDebitDest.Identifier,
@@ -75,7 +75,7 @@ var walletDebitTestCases = []testCase{
 		},
 		expectedPostTransaction: func(testEnv *testEnv, walletID string, h *wallet.DebitHold) wallet.PostTransaction {
 			return wallet.PostTransaction{
-				Script: &shared.PostTransactionScript{
+				Script: &shared.V2PostTransactionScript{
 					Plain: wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetMainBalanceAccount(walletID)),
 					Vars: map[string]interface{}{
 						"destination": wallet.DefaultDebitDest.Identifier,
@@ -98,7 +98,7 @@ var walletDebitTestCases = []testCase{
 		},
 		expectedPostTransaction: func(testEnv *testEnv, walletID string, h *wallet.DebitHold) wallet.PostTransaction {
 			return wallet.PostTransaction{
-				Script: &shared.PostTransactionScript{
+				Script: &shared.V2PostTransactionScript{
 					Plain: wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetMainBalanceAccount(walletID)),
 					Vars: map[string]interface{}{
 						"destination": "account1",
@@ -120,7 +120,7 @@ var walletDebitTestCases = []testCase{
 		},
 		expectedPostTransaction: func(testEnv *testEnv, walletID string, h *wallet.DebitHold) wallet.PostTransaction {
 			return wallet.PostTransaction{
-				Script: &shared.PostTransactionScript{
+				Script: &shared.V2PostTransactionScript{
 					Plain: wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetMainBalanceAccount(walletID)),
 					Vars: map[string]interface{}{
 						"destination": testEnv.Chart().GetMainBalanceAccount("wallet1"),
@@ -157,7 +157,7 @@ var walletDebitTestCases = []testCase{
 		},
 		expectedPostTransaction: func(testEnv *testEnv, walletID string, h *wallet.DebitHold) wallet.PostTransaction {
 			return wallet.PostTransaction{
-				Script: &shared.PostTransactionScript{
+				Script: &shared.V2PostTransactionScript{
 					Plain: wallet.BuildDebitWalletScript(map[string]map[string]string{
 						testEnv.Chart().GetHoldAccount(h.ID): h.LedgerMetadata(testEnv.Chart()),
 					}, testEnv.Chart().GetMainBalanceAccount(walletID)),
@@ -184,7 +184,7 @@ var walletDebitTestCases = []testCase{
 		},
 		expectedPostTransaction: func(testEnv *testEnv, walletID string, h *wallet.DebitHold) wallet.PostTransaction {
 			return wallet.PostTransaction{
-				Script: &shared.PostTransactionScript{
+				Script: &shared.V2PostTransactionScript{
 					Plain: wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetBalanceAccount(walletID, "secondary")),
 					Vars: map[string]interface{}{
 						"destination": "world",
@@ -206,7 +206,7 @@ var walletDebitTestCases = []testCase{
 		},
 		expectedPostTransaction: func(testEnv *testEnv, walletID string, h *wallet.DebitHold) wallet.PostTransaction {
 			return wallet.PostTransaction{
-				Script: &shared.PostTransactionScript{
+				Script: &shared.V2PostTransactionScript{
 					Plain: wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetBalanceAccount(walletID, "coupon1"), testEnv.Chart().GetBalanceAccount(walletID, "coupon4"), testEnv.Chart().GetBalanceAccount(walletID, "coupon2"), testEnv.Chart().GetBalanceAccount(walletID, "main")),
 					Vars: map[string]interface{}{
 						"destination": "world",
@@ -228,7 +228,7 @@ var walletDebitTestCases = []testCase{
 		},
 		expectedPostTransaction: func(testEnv *testEnv, walletID string, h *wallet.DebitHold) wallet.PostTransaction {
 			return wallet.PostTransaction{
-				Script: &shared.PostTransactionScript{
+				Script: &shared.V2PostTransactionScript{
 					Plain: wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetBalanceAccount(walletID, "secondary")),
 					Vars: map[string]interface{}{
 						"destination": "world",
@@ -252,7 +252,7 @@ var walletDebitTestCases = []testCase{
 		},
 		expectedPostTransaction: func(testEnv *testEnv, walletID string, h *wallet.DebitHold) wallet.PostTransaction {
 			return wallet.PostTransaction{
-				Script: &shared.PostTransactionScript{
+				Script: &shared.V2PostTransactionScript{
 					Plain: wallet.BuildDebitWalletScript(map[string]map[string]string{}, testEnv.Chart().GetMainBalanceAccount(walletID)),
 					Vars: map[string]interface{}{
 						"destination": testEnv.Chart().GetBalanceAccount("wallet1", "secondary"),
@@ -289,44 +289,54 @@ func TestWalletsDebit(t *testing.T) {
 					require.Equal(t, query.Metadata, wallet.BalancesMetadataFilter(walletID))
 
 					return &wallet.AccountsCursorResponseCursor{
-						Data: []wallet.Account{
+						Data: []wallet.AccountWithVolumesAndBalances{
 							{
-								Address: testEnv.Chart().GetBalanceAccount(walletID, "coupon2"),
-								Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
-									Name:     "coupon2",
-									Priority: 10,
-								}.LedgerMetadata(walletID)),
+								Account: wallet.Account{
+									Address: testEnv.Chart().GetBalanceAccount(walletID, "coupon2"),
+									Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
+										Name:     "coupon2",
+										Priority: 10,
+									}.LedgerMetadata(walletID)),
+								},
 							},
 							{
-								Address: testEnv.Chart().GetBalanceAccount(walletID, "coupon1"),
-								Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
-									Name:      "coupon1",
-									ExpiresAt: ptr(time.Now().Add(5 * time.Second)),
-								}.LedgerMetadata(walletID)),
+								Account: wallet.Account{
+									Address: testEnv.Chart().GetBalanceAccount(walletID, "coupon1"),
+									Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
+										Name:      "coupon1",
+										ExpiresAt: ptr(time.Now().Add(5 * time.Second)),
+									}.LedgerMetadata(walletID)),
+								},
 							},
 							{
-								Address: testEnv.Chart().GetBalanceAccount(walletID, "coupon3"),
-								Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
-									Name:      "coupon3",
-									ExpiresAt: ptr(time.Now().Add(-time.Minute)),
-								}.LedgerMetadata(walletID)),
+								Account: wallet.Account{
+									Address: testEnv.Chart().GetBalanceAccount(walletID, "coupon3"),
+									Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
+										Name:      "coupon3",
+										ExpiresAt: ptr(time.Now().Add(-time.Minute)),
+									}.LedgerMetadata(walletID)),
+								},
 							},
 							{
-								Address: testEnv.Chart().GetBalanceAccount(walletID, "coupon4"),
-								Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
-									Name: "coupon4",
-								}.LedgerMetadata(walletID)),
+								Account: wallet.Account{
+									Address: testEnv.Chart().GetBalanceAccount(walletID, "coupon4"),
+									Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
+										Name: "coupon4",
+									}.LedgerMetadata(walletID)),
+								},
 							},
 							{
-								Address: testEnv.Chart().GetBalanceAccount(walletID, "main"),
-								Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
-									Name: "main",
-								}.LedgerMetadata(walletID)),
+								Account: wallet.Account{
+									Address: testEnv.Chart().GetBalanceAccount(walletID, "main"),
+									Metadata: metadataWithExpectingTypesAfterUnmarshalling(wallet.Balance{
+										Name: "main",
+									}.LedgerMetadata(walletID)),
+								},
 							},
 						},
 					}, nil
 				}),
-				WithCreateTransaction(func(ctx context.Context, ledger string, p wallet.PostTransaction) (*shared.Transaction, error) {
+				WithCreateTransaction(func(ctx context.Context, ledger string, p wallet.PostTransaction) (*shared.V2Transaction, error) {
 					require.Equal(t, testEnv.LedgerName(), ledger)
 					postTransaction = p
 					if testCase.postTransactionError != nil {

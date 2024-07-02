@@ -56,6 +56,7 @@ func NewDebitHold(walletID string, destination Subject, asset, description strin
 func DebitHoldFromLedgerAccount(account interface {
 	MetadataOwner
 	GetAddress() string
+	GetBalances() map[string]*big.Int
 }) DebitHold {
 	destination := metadata.UnmarshalValue[metadata.Metadata](account.GetMetadata()[MetadataKeyHoldSubject])
 
@@ -87,7 +88,7 @@ func (h ExpandedDebitHold) IsClosed() bool {
 func ExpandedDebitHoldFromLedgerAccount(account interface {
 	MetadataOwner
 	GetAddress() string
-	GetVolumes() map[string]shared.Volume
+	GetVolumes() map[string]shared.V2Volume
 	GetBalances() map[string]*big.Int
 }) ExpandedDebitHold {
 	hold := ExpandedDebitHold{
