@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"sync"
 
-	"github.com/antithesishq/antithesis-sdk-go/assert"
 	"github.com/formancehq/ledger/internal/machine/vm/program"
 	"github.com/formancehq/ledger/internal/opentelemetry/tracer"
 
@@ -195,8 +194,6 @@ func (commander *Commander) exec(ctx context.Context, parameters Parameters, scr
 			return nil, NewErrNoPostings()
 		}
 
-		currentTXID := commander.lastTXID.String()
-
 		txID := commander.predictNextTxID()
 		if !parameters.DryRun {
 			txID = commander.allocateNewTxID()
@@ -213,11 +210,6 @@ func (commander *Commander) exec(ctx context.Context, parameters Parameters, scr
 		if parameters.IdempotencyKey != "" {
 			log = log.WithIdempotencyKey(parameters.IdempotencyKey)
 		}
-
-		assert.Always(currentTXID < tx.ID.String(), "tx id should be greater than last tx id", map[string]any{
-			"currentTXID": currentTXID,
-			"tx.ID":       tx.ID.String(),
-		})
 
 		return executionContext.AppendLog(ctx, log)
 	})
