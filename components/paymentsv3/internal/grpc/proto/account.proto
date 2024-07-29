@@ -1,0 +1,29 @@
+syntax = "proto3";
+package formance.payments.grpc.proto;
+option go_package = "github.com/formancehq/stack/components/paymentsv3/internal/grpc/proto";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+
+// Represents an internal account in Formance
+message Account {
+    // PSP reference of the account
+    // Example for stripe: acc_xxxxxxxx
+    string reference = 1;
+
+    // Human readable name of the account (if existing)
+    string name = 2;
+
+    // Account's creation date
+    google.protobuf.Timestamp created_at = 3;
+
+    // If provided, the default asset of the account.
+    // Example: USD/2
+    string default_asset = 4;
+
+    // Additional metadata
+    map<string, string> metadata = 5;
+
+    // The PSP raw message
+    google.protobuf.Any raw = 6;
+}

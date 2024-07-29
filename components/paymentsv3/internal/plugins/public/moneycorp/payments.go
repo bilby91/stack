@@ -1,0 +1,167 @@
+package moneycorp
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"strconv"
+	"time"
+
+	"github.com/formancehq/stack/components/paymentsv3/internal/currency"
+	"github.com/formancehq/stack/components/paymentsv3/internal/plugins/models"
+	"github.com/formancehq/stack/components/paymentsv3/internal/plugins/public/moneycorp/client"
+	"github.com/formancehq/stack/components/paymentsv3/internal/utils"
+)
+
+type paymentsState struct {
+	LastCreatedAt time.Time `json:"lastCreatedAt"`
+}
+
+type from struct {
+	ID string `json:"id"`
+}
+
+func (p Plugin) fetchPayments(ctx context.Context, req models.FetchPaymentsRequest) (models.FetchPaymentsResponse, error) {
+	var oldState paymentsState
+	if req.State != nil {
+		if err := json.Unmarshal(req.State, &oldState); err != nil {
+			return models.FetchPaymentsResponse{}, err
+		}
+	}
+
+	var from from
+	if req.FromPayload == nil {
+		return models.FetchPaymentsResponse{}, errors.New("missing from payload when fetching payments")
+	}
+	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
+		return models.FetchPaymentsResponse{}, err
+	}
+
+	newState := paymentsState{
+		LastCreatedAt: oldState.LastCreatedAt,
+	}
+
+	var payments []models.Payment
+	for page := 0; ; page++ {
+		pagedTransactions, err := p.client.GetTransactions(ctx, from.ID, page, oldState.LastCreatedAt)
+		if err != nil {
+			// retryable error already handled by the client
+			return models.FetchPaymentsResponse{}, err
+		}
+
+		if len(pagedTransactions) == 0 {
+			break
+		}
+
+		for _, transaction := range pagedTransactions {
+			createdAt, err := time.Parse("2006-01-02T15:04:05.999999999", transaction.Attributes.CreatedAt)
+			if err != nil {
+				return models.FetchPaymentsResponse{}, fmt.Errorf("failed to parse transaction date: %v", err)
+			}
+
+			switch createdAt.Compare(oldState.LastCreatedAt) {
+			case -1, 0:
+				continue
+			default:
+			}
+
+			newState.LastCreatedAt = createdAt
+
+			payment, err := transactionToPayments(transaction)
+			if err != nil {
+				return models.FetchPaymentsResponse{}, err
+			}
+
+			if payment != nil {
+				payments = append(payments, *payment)
+			}
+		}
+
+		if len(pagedTransactions) < p.client.PageSize() {
+			break
+		}
+	}
+
+	payload, err := json.Marshal(newState)
+	if err != nil {
+		return models.FetchPaymentsResponse{}, err
+	}
+
+	return models.FetchPaymentsResponse{
+		Payments: payments,
+		NewState: payload,
+	}, nil
+}
+
+func transactionToPayments(transaction *client.Transaction) (*models.Payment, error) {
+	rawData, err := json.Marshal(transaction)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal transaction: %w", err)
+	}
+
+	paymentType, shouldBeRecorded := matchPaymentType(transaction.Attributes.Type, transaction.Attributes.Direction)
+	if !shouldBeRecorded {
+		return nil, nil
+	}
+
+	createdAt, err := time.Parse("2006-01-02T15:04:05.999999999", transaction.Attributes.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse transaction date: %w", err)
+	}
+
+	c, err := currency.GetPrecision(supportedCurrenciesWithDecimal, transaction.Attributes.Currency)
+	if err != nil {
+		return nil, err
+	}
+
+	amount, err := currency.GetAmountWithPrecisionFromString(transaction.Attributes.Amount.String(), c)
+	if err != nil {
+		return nil, err
+	}
+
+	payment := models.Payment{
+		Reference:                   transaction.ID,
+		CreatedAt:                   createdAt,
+		PaymentType:                 paymentType,
+		Amount:                      amount,
+		Asset:                       currency.FormatAsset(supportedCurrenciesWithDecimal, transaction.Attributes.Currency),
+		Scheme:                      models.PaymentSchemeOther,
+		Status:                      models.PaymentStatusSucceeded,
+		SourceAccountReference:      new(string),
+		DestinationAccountReference: new(string),
+		Metadata:                    map[string]string{},
+		Raw:                         rawData,
+	}
+
+	switch paymentType {
+	case models.PaymentTypePayIn:
+		payment.DestinationAccountReference = utils.Ptr(strconv.Itoa(int(transaction.Attributes.AccountID)))
+	case models.PaymentTypePayOut:
+		payment.SourceAccountReference = utils.Ptr(strconv.Itoa(int(transaction.Attributes.AccountID)))
+	default:
+		if transaction.Attributes.Direction == "Debit" {
+			payment.SourceAccountReference = utils.Ptr(strconv.Itoa(int(transaction.Attributes.AccountID)))
+		} else {
+			payment.DestinationAccountReference = utils.Ptr(strconv.Itoa(int(transaction.Attributes.AccountID)))
+		}
+	}
+
+	return &payment, nil
+}
+
+func matchPaymentType(transactionType string, transactionDirection string) (models.PaymentType, bool) {
+	switch transactionType {
+	case "Transfer":
+		return models.PaymentTypeTransfer, true
+	case "Payment", "Exchange", "Charge", "Refund":
+		switch transactionDirection {
+		case "Debit":
+			return models.PaymentTypePayOut, true
+		case "Credit":
+			return models.PaymentTypePayIn, true
+		}
+	}
+
+	return models.PaymentTypeOther, false
+}

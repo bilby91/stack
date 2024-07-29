@@ -1,0 +1,23 @@
+syntax = "proto3";
+package formance.payments.grpc.proto;
+option go_package = "github.com/formancehq/stack/components/paymentsv3/internal/grpc/proto";
+
+message TaskTree {
+    message FetchAccounts {}
+    message FetchPayments {}
+    message FetchOthers {
+        string name = 1;
+    }
+
+    repeated TaskTree next_tasks = 1;
+
+    oneof task {
+        FetchAccounts fetch_accounts = 10;
+        FetchPayments fetch_payments = 11;
+        FetchOthers fetch_others = 12;
+    }
+}
+
+message Workflow {
+    repeated TaskTree tasks = 1;
+}
