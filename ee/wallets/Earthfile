@@ -1,17 +1,15 @@
 VERSION 0.8
+PROJECT FormanceHQ/wallets
 
-IMPORT github.com/formancehq/earthly:tags/v0.12.0 AS core
-IMPORT ../.. AS stack
-IMPORT ../../releases AS releases
-IMPORT .. AS ee
+IMPORT github.com/formancehq/earthly:feat/monorepo AS core
 
 FROM core+base-image
 
 sources:
     WORKDIR src
-    DO stack+INCLUDE_GO_LIBS --LOCATION libs/go-libs
-    COPY (stack+sources/out --LOCATION=libs/core) libs/core
-    COPY --pass-args (releases+sdk-generate/go) /src/releases/sdks/go
+    DO core+INCLUDE_GO_LIBS --LOCATION libs/go-libs
+    DO core+INCLUDE_CORE_LIBS --LOCATION libs/core
+    DO core+INCLURE_SDK_GO --LOCATION /src/releases/sdks/go
     WORKDIR /src/ee/wallets
     COPY go.* .
     COPY --dir pkg cmd .
@@ -52,14 +50,14 @@ deploy:
     RUN kubectl patch Versions.formance.com default -p "{\"spec\":{\"wallets\": \"${tag}\"}}" --type=merge
 
 deploy-staging:
-    BUILD --pass-args stack+deployer-module --MODULE=wallets
+    BUILD --pass-args core+deployer-module --MODULE=wallets
 
 lint:
     FROM core+builder-image
     COPY (+sources/*) /src
     COPY --pass-args +tidy/go.* .
     WORKDIR /src/ee/wallets
-    DO --pass-args stack+GO_LINT
+    DO --pass-args core+GO_LINT
     SAVE ARTIFACT cmd AS LOCAL cmd
     SAVE ARTIFACT pkg AS LOCAL pkg
     SAVE ARTIFACT main.go AS LOCAL main.go
@@ -78,7 +76,10 @@ tidy:
     FROM core+builder-image
     COPY --pass-args (+sources/src) /src
     WORKDIR /src/ee/wallets
-    DO --pass-args stack+GO_TIDY
+    DO --pass-args core+GO_TIDY
 
 release:
-    BUILD --pass-args stack+goreleaser --path=ee/wallets
+    FROM core+builder-image
+    ARG mode=local
+    COPY . /src
+    DO core+GORELEASER --mode=$mode
