@@ -11,7 +11,6 @@ import (
 type Client struct {
 	httpClient *http.Client
 	endpoint   string
-	pageSize   int
 }
 
 func newHTTPClient(clientID, apiKey, endpoint string) *http.Client {
@@ -26,18 +25,13 @@ func newHTTPClient(clientID, apiKey, endpoint string) *http.Client {
 	}
 }
 
-func NewClient(clientID, apiKey, endpoint string, pageSize int) (*Client, error) {
+func NewClient(clientID, apiKey, endpoint string) (*Client, error) {
 	endpoint = strings.TrimSuffix(endpoint, "/")
 
 	c := &Client{
 		httpClient: newHTTPClient(clientID, apiKey, endpoint),
 		endpoint:   endpoint,
-		pageSize:   pageSize,
 	}
 
 	return c, nil
-}
-
-func (c Client) PageSize() int {
-	return c.pageSize
 }

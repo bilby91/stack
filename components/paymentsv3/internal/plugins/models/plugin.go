@@ -8,9 +8,9 @@ import (
 type Plugin interface {
 	Install(context.Context, InstallRequest) (InstallResponse, error)
 
-	FetchAccounts(context.Context, FetchAccountsRequest) (FetchAccountsResponse, error)
-	FetchPayments(context.Context, FetchPaymentsRequest) (FetchPaymentsResponse, error)
-	FetchOthers(context.Context, FetchOthersRequest) (FetchOthersResponse, error)
+	FetchNextAccounts(context.Context, FetchNextAccountsRequest) (FetchNextAccountsResponse, error)
+	FetchNextPayments(context.Context, FetchNextPaymentsRequest) (FetchNextPaymentsResponse, error)
+	FetchNextOthers(context.Context, FetchNextOthersRequest) (FetchNextOthersResponse, error)
 }
 
 type InstallRequest struct {
@@ -22,32 +22,39 @@ type InstallResponse struct {
 	Workflow     Workflow
 }
 
-type FetchAccountsRequest struct {
+type FetchNextAccountsRequest struct {
 	FromPayload json.RawMessage
 	State       json.RawMessage
+	PageSize    int
 }
 
-type FetchAccountsResponse struct {
+type FetchNextAccountsResponse struct {
 	Accounts []Account
 	NewState json.RawMessage
+	HasMore  bool
 }
 
-type FetchPaymentsRequest struct {
+type FetchNextPaymentsRequest struct {
 	FromPayload json.RawMessage
 	State       json.RawMessage
+	PageSize    int
 }
 
-type FetchPaymentsResponse struct {
+type FetchNextPaymentsResponse struct {
 	Payments []Payment
 	NewState json.RawMessage
+	HasMore  bool
 }
 
-type FetchOthersRequest struct {
-	Name  string
-	State json.RawMessage
+type FetchNextOthersRequest struct {
+	Name        string
+	FromPayload json.RawMessage
+	State       json.RawMessage
+	PageSize    int
 }
 
-type FetchOthersResponse struct {
-	Payload  json.RawMessage
+type FetchNextOthersResponse struct {
+	Others   []json.RawMessage
 	NewState json.RawMessage
+	HasMore  bool
 }

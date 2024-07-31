@@ -7,7 +7,6 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -19,12 +18,10 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PluginClient interface {
-	Name(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*NameResponse, error)
 	Install(ctx context.Context, in *InstallRequest, opts ...grpc.CallOption) (*InstallResponse, error)
-	FetchOthers(ctx context.Context, in *FetchOthersRequest, opts ...grpc.CallOption) (*FetchOthersResponse, error)
-	FetchPayments(ctx context.Context, in *FetchPaymentsRequest, opts ...grpc.CallOption) (*FetchPaymentsResponse, error)
-	FetchAccounts(ctx context.Context, in *FetchAccountsRequest, opts ...grpc.CallOption) (*FetchAccountsResponse, error)
-	FetchExternalAccounts(ctx context.Context, in *FetchExternalAccountsRequest, opts ...grpc.CallOption) (*FetchExternalAccountsResponse, error)
+	FetchNextOthers(ctx context.Context, in *FetchNextOthersRequest, opts ...grpc.CallOption) (*FetchNextOthersResponse, error)
+	FetchNextPayments(ctx context.Context, in *FetchNextPaymentsRequest, opts ...grpc.CallOption) (*FetchNextPaymentsResponse, error)
+	FetchNextAccounts(ctx context.Context, in *FetchNextAccountsRequest, opts ...grpc.CallOption) (*FetchNextAccountsResponse, error)
 }
 
 type pluginClient struct {
@@ -33,15 +30,6 @@ type pluginClient struct {
 
 func NewPluginClient(cc grpc.ClientConnInterface) PluginClient {
 	return &pluginClient{cc}
-}
-
-func (c *pluginClient) Name(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*NameResponse, error) {
-	out := new(NameResponse)
-	err := c.cc.Invoke(ctx, "/formance.payments.grpc.services.Plugin/Name", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *pluginClient) Install(ctx context.Context, in *InstallRequest, opts ...grpc.CallOption) (*InstallResponse, error) {
@@ -53,36 +41,27 @@ func (c *pluginClient) Install(ctx context.Context, in *InstallRequest, opts ...
 	return out, nil
 }
 
-func (c *pluginClient) FetchOthers(ctx context.Context, in *FetchOthersRequest, opts ...grpc.CallOption) (*FetchOthersResponse, error) {
-	out := new(FetchOthersResponse)
-	err := c.cc.Invoke(ctx, "/formance.payments.grpc.services.Plugin/FetchOthers", in, out, opts...)
+func (c *pluginClient) FetchNextOthers(ctx context.Context, in *FetchNextOthersRequest, opts ...grpc.CallOption) (*FetchNextOthersResponse, error) {
+	out := new(FetchNextOthersResponse)
+	err := c.cc.Invoke(ctx, "/formance.payments.grpc.services.Plugin/FetchNextOthers", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *pluginClient) FetchPayments(ctx context.Context, in *FetchPaymentsRequest, opts ...grpc.CallOption) (*FetchPaymentsResponse, error) {
-	out := new(FetchPaymentsResponse)
-	err := c.cc.Invoke(ctx, "/formance.payments.grpc.services.Plugin/FetchPayments", in, out, opts...)
+func (c *pluginClient) FetchNextPayments(ctx context.Context, in *FetchNextPaymentsRequest, opts ...grpc.CallOption) (*FetchNextPaymentsResponse, error) {
+	out := new(FetchNextPaymentsResponse)
+	err := c.cc.Invoke(ctx, "/formance.payments.grpc.services.Plugin/FetchNextPayments", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *pluginClient) FetchAccounts(ctx context.Context, in *FetchAccountsRequest, opts ...grpc.CallOption) (*FetchAccountsResponse, error) {
-	out := new(FetchAccountsResponse)
-	err := c.cc.Invoke(ctx, "/formance.payments.grpc.services.Plugin/FetchAccounts", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *pluginClient) FetchExternalAccounts(ctx context.Context, in *FetchExternalAccountsRequest, opts ...grpc.CallOption) (*FetchExternalAccountsResponse, error) {
-	out := new(FetchExternalAccountsResponse)
-	err := c.cc.Invoke(ctx, "/formance.payments.grpc.services.Plugin/FetchExternalAccounts", in, out, opts...)
+func (c *pluginClient) FetchNextAccounts(ctx context.Context, in *FetchNextAccountsRequest, opts ...grpc.CallOption) (*FetchNextAccountsResponse, error) {
+	out := new(FetchNextAccountsResponse)
+	err := c.cc.Invoke(ctx, "/formance.payments.grpc.services.Plugin/FetchNextAccounts", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -93,12 +72,10 @@ func (c *pluginClient) FetchExternalAccounts(ctx context.Context, in *FetchExter
 // All implementations must embed UnimplementedPluginServer
 // for forward compatibility
 type PluginServer interface {
-	Name(context.Context, *emptypb.Empty) (*NameResponse, error)
 	Install(context.Context, *InstallRequest) (*InstallResponse, error)
-	FetchOthers(context.Context, *FetchOthersRequest) (*FetchOthersResponse, error)
-	FetchPayments(context.Context, *FetchPaymentsRequest) (*FetchPaymentsResponse, error)
-	FetchAccounts(context.Context, *FetchAccountsRequest) (*FetchAccountsResponse, error)
-	FetchExternalAccounts(context.Context, *FetchExternalAccountsRequest) (*FetchExternalAccountsResponse, error)
+	FetchNextOthers(context.Context, *FetchNextOthersRequest) (*FetchNextOthersResponse, error)
+	FetchNextPayments(context.Context, *FetchNextPaymentsRequest) (*FetchNextPaymentsResponse, error)
+	FetchNextAccounts(context.Context, *FetchNextAccountsRequest) (*FetchNextAccountsResponse, error)
 	mustEmbedUnimplementedPluginServer()
 }
 
@@ -106,23 +83,17 @@ type PluginServer interface {
 type UnimplementedPluginServer struct {
 }
 
-func (UnimplementedPluginServer) Name(context.Context, *emptypb.Empty) (*NameResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Name not implemented")
-}
 func (UnimplementedPluginServer) Install(context.Context, *InstallRequest) (*InstallResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Install not implemented")
 }
-func (UnimplementedPluginServer) FetchOthers(context.Context, *FetchOthersRequest) (*FetchOthersResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method FetchOthers not implemented")
+func (UnimplementedPluginServer) FetchNextOthers(context.Context, *FetchNextOthersRequest) (*FetchNextOthersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FetchNextOthers not implemented")
 }
-func (UnimplementedPluginServer) FetchPayments(context.Context, *FetchPaymentsRequest) (*FetchPaymentsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method FetchPayments not implemented")
+func (UnimplementedPluginServer) FetchNextPayments(context.Context, *FetchNextPaymentsRequest) (*FetchNextPaymentsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FetchNextPayments not implemented")
 }
-func (UnimplementedPluginServer) FetchAccounts(context.Context, *FetchAccountsRequest) (*FetchAccountsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method FetchAccounts not implemented")
-}
-func (UnimplementedPluginServer) FetchExternalAccounts(context.Context, *FetchExternalAccountsRequest) (*FetchExternalAccountsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method FetchExternalAccounts not implemented")
+func (UnimplementedPluginServer) FetchNextAccounts(context.Context, *FetchNextAccountsRequest) (*FetchNextAccountsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FetchNextAccounts not implemented")
 }
 func (UnimplementedPluginServer) mustEmbedUnimplementedPluginServer() {}
 
@@ -135,24 +106,6 @@ type UnsafePluginServer interface {
 
 func RegisterPluginServer(s grpc.ServiceRegistrar, srv PluginServer) {
 	s.RegisterService(&Plugin_ServiceDesc, srv)
-}
-
-func _Plugin_Name_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(PluginServer).Name(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/formance.payments.grpc.services.Plugin/Name",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PluginServer).Name(ctx, req.(*emptypb.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _Plugin_Install_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -173,74 +126,56 @@ func _Plugin_Install_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Plugin_FetchOthers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FetchOthersRequest)
+func _Plugin_FetchNextOthers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FetchNextOthersRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PluginServer).FetchOthers(ctx, in)
+		return srv.(PluginServer).FetchNextOthers(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/formance.payments.grpc.services.Plugin/FetchOthers",
+		FullMethod: "/formance.payments.grpc.services.Plugin/FetchNextOthers",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PluginServer).FetchOthers(ctx, req.(*FetchOthersRequest))
+		return srv.(PluginServer).FetchNextOthers(ctx, req.(*FetchNextOthersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Plugin_FetchPayments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FetchPaymentsRequest)
+func _Plugin_FetchNextPayments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FetchNextPaymentsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PluginServer).FetchPayments(ctx, in)
+		return srv.(PluginServer).FetchNextPayments(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/formance.payments.grpc.services.Plugin/FetchPayments",
+		FullMethod: "/formance.payments.grpc.services.Plugin/FetchNextPayments",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PluginServer).FetchPayments(ctx, req.(*FetchPaymentsRequest))
+		return srv.(PluginServer).FetchNextPayments(ctx, req.(*FetchNextPaymentsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Plugin_FetchAccounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FetchAccountsRequest)
+func _Plugin_FetchNextAccounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FetchNextAccountsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PluginServer).FetchAccounts(ctx, in)
+		return srv.(PluginServer).FetchNextAccounts(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/formance.payments.grpc.services.Plugin/FetchAccounts",
+		FullMethod: "/formance.payments.grpc.services.Plugin/FetchNextAccounts",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PluginServer).FetchAccounts(ctx, req.(*FetchAccountsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Plugin_FetchExternalAccounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FetchExternalAccountsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(PluginServer).FetchExternalAccounts(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/formance.payments.grpc.services.Plugin/FetchExternalAccounts",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PluginServer).FetchExternalAccounts(ctx, req.(*FetchExternalAccountsRequest))
+		return srv.(PluginServer).FetchNextAccounts(ctx, req.(*FetchNextAccountsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -253,28 +188,20 @@ var Plugin_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*PluginServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Name",
-			Handler:    _Plugin_Name_Handler,
-		},
-		{
 			MethodName: "Install",
 			Handler:    _Plugin_Install_Handler,
 		},
 		{
-			MethodName: "FetchOthers",
-			Handler:    _Plugin_FetchOthers_Handler,
+			MethodName: "FetchNextOthers",
+			Handler:    _Plugin_FetchNextOthers_Handler,
 		},
 		{
-			MethodName: "FetchPayments",
-			Handler:    _Plugin_FetchPayments_Handler,
+			MethodName: "FetchNextPayments",
+			Handler:    _Plugin_FetchNextPayments_Handler,
 		},
 		{
-			MethodName: "FetchAccounts",
-			Handler:    _Plugin_FetchAccounts_Handler,
-		},
-		{
-			MethodName: "FetchExternalAccounts",
-			Handler:    _Plugin_FetchExternalAccounts_Handler,
+			MethodName: "FetchNextAccounts",
+			Handler:    _Plugin_FetchNextAccounts_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -1,6 +1,6 @@
 package moneycorp
 
-import "github.com/formancehq/stack/components/paymentsv3/internal/currency"
+import "github.com/formancehq/paymentsv3/internal/plugins/currency"
 
 var (
 	supportedCurrenciesWithDecimal = map[string]int{

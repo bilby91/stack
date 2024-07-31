@@ -43,60 +43,63 @@ type Payment struct {
 
 // TODO(polo): match grpc et const
 type (
-	PaymentType   string
-	PaymentStatus string
-	PaymentScheme string
+	PaymentType   int
+	PaymentStatus int
+	PaymentScheme int
 )
 
 const (
-	PaymentTypePayIn    PaymentType = "PAYIN"
-	PaymentTypePayOut   PaymentType = "PAYOUT"
-	PaymentTypeTransfer PaymentType = "TRANSFER"
-	PaymentTypeOther    PaymentType = "OTHER"
+	PAYMENT_TYPE_UNKNOWN PaymentType = iota
+	PAYMENT_TYPE_PAYIN
+	PAYMENT_TYPE_PAYOUT
+	PAYMENT_TYPE_TRANSFER
+	PAYMENT_TYPE_OTHER = 100 // match grpc tag
 )
 
 const (
-	PaymentStatusPending         PaymentStatus = "PENDING"
-	PaymentStatusSucceeded       PaymentStatus = "SUCCEEDED"
-	PaymentStatusCancelled       PaymentStatus = "CANCELLED"
-	PaymentStatusFailed          PaymentStatus = "FAILED"
-	PaymentStatusExpired         PaymentStatus = "EXPIRED"
-	PaymentStatusRefunded        PaymentStatus = "REFUNDED"
-	PaymentStatusRefundedFailure PaymentStatus = "REFUNDED_FAILURE"
-	PaymentStatusDispute         PaymentStatus = "DISPUTE"
-	PaymentStatusDisputeWon      PaymentStatus = "DISPUTE_WON"
-	PaymentStatusDisputeLost     PaymentStatus = "DISPUTE_LOST"
-	PaymentStatusOther           PaymentStatus = "OTHER"
+	PAYMENT_STATUS_UNKNOWN PaymentStatus = iota
+	PAYMENT_STATUS_PENDING
+	PAYMENT_STATUS_SUCCEEDED
+	PAYMENT_STATUS_CANCELLED
+	PAYMENT_STATUS_FAILED
+	PAYMENT_STATUS_EXPIRED
+	PAYMENT_STATUS_REFUNDED
+	PAYMENT_STATUS_REFUNDED_FAILURE
+	PAYMENT_STATUS_DISPUTE
+	PAYMENT_STATUS_DISPUTE_WON
+	PAYMENT_STATUS_DISPUTE_LOST
+	PAYMENT_STATUS_OTHER = 100 // match grpc tag
 )
 
 const (
-	PaymentSchemeUnknown PaymentScheme = "unknown"
-	PaymentSchemeOther   PaymentScheme = "other"
+	PAYMENT_SCHEME_UNKNOWN PaymentScheme = iota
 
-	PaymentSchemeCardVisa       PaymentScheme = "visa"
-	PaymentSchemeCardMasterCard PaymentScheme = "mastercard"
-	PaymentSchemeCardAmex       PaymentScheme = "amex"
-	PaymentSchemeCardDiners     PaymentScheme = "diners"
-	PaymentSchemeCardDiscover   PaymentScheme = "discover"
-	PaymentSchemeCardJCB        PaymentScheme = "jcb"
-	PaymentSchemeCardUnionPay   PaymentScheme = "unionpay"
-	PaymentSchemeCardAlipay     PaymentScheme = "alipay"
-	PaymentSchemeCardCUP        PaymentScheme = "cup"
+	PAYMENT_SCHEME_CARD_VISA
+	PAYMENT_SCHEME_CARD_MASTERCARD
+	PAYMENT_SCHEME_CARD_AMEX
+	PAYMENT_SCHEME_CARD_DINERS
+	PAYMENT_SCHEME_CARD_DISCOVER
+	PAYMENT_SCHEME_CARD_JCB
+	PAYMENT_SCHEME_CARD_UNION_PAY
+	PAYMENT_SCHEME_CARD_ALIPAY
+	PAYMENT_SCHEME_CARD_CUP
 
-	PaymentSchemeSepaDebit  PaymentScheme = "sepa debit"
-	PaymentSchemeSepaCredit PaymentScheme = "sepa credit"
-	PaymentSchemeSepa       PaymentScheme = "sepa"
+	PAYMENT_SCHEME_SEPA_DEBIT
+	PAYMENT_SCHEME_SEPA_CREDIT
+	PAYMENT_SCHEME_SEPA
 
-	PaymentSchemeApplePay  PaymentScheme = "apple pay"
-	PaymentSchemeGooglePay PaymentScheme = "google pay"
+	PAYMENT_SCHEME_GOOGLE_PAY
+	PAYMENT_SCHEME_APPLE_PAY
 
-	PaymentSchemeDOKU      PaymentScheme = "doku"
-	PaymentSchemeDragonPay PaymentScheme = "dragonpay"
-	PaymentSchemeMaestro   PaymentScheme = "maestro"
-	PaymentSchemeMolPay    PaymentScheme = "molpay"
+	PAYMENT_SCHEME_DOKU
+	PAYMENT_SCHEME_DRAGON_PAY
+	PAYMENT_SCHEME_MAESTRO
+	PAYMENT_SCHEME_MOL_PAY
 
-	PaymentSchemeA2A      PaymentScheme = "a2a"
-	PaymentSchemeACHDebit PaymentScheme = "ach debit"
-	PaymentSchemeACH      PaymentScheme = "ach"
-	PaymentSchemeRTP      PaymentScheme = "rtp"
+	PaymentSchePAYMENT_SCHEME_A2A
+	PAYMENT_SCHEME_ACH_DEBIT
+	PAYMENT_SCHEME_ACH
+	PAYMENT_SCHEME_RTP
+
+	PAYMENT_SCHEME_OTHER = 100 // match grpc tag
 )

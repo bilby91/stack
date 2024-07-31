@@ -1,21 +1,14 @@
 syntax = "proto3";
 package formance.payments.grpc.services;
-option go_package = "github.com/formancehq/stack/components/paymentsv3/internal/grpc/proto/services";
-
-import "google/protobuf/any.proto";
-import "google/protobuf/empty.proto";
+option go_package = "github.com/formancehq/paymentsv3/internal/grpc/proto/services";
 
 import "account.proto";
 import "capability.proto";
 import "payment.proto";
 import "workflow.proto";
 
-message NameResponse {
-    string name = 1;
-}
-
 message InstallRequest {
-    google.protobuf.Any config = 1;
+    bytes config = 1;
 }
 
 message InstallResponse {
@@ -23,42 +16,38 @@ message InstallResponse {
     formance.payments.grpc.proto.Workflow workflow = 2;
 }
 
-message FetchOthersRequest {
+message FetchNextOthersRequest {
     string name = 1;
-    google.protobuf.Any state = 2;
+    bytes from_payload = 2;
+    bytes state = 3;
 }
-message FetchOthersResponse {
-    repeated google.protobuf.Any payload = 1;
-    google.protobuf.Any new_state = 2;
+message FetchNextOthersResponse {
+    repeated bytes payload = 1;
+    bytes new_state = 2;
 }
 
-message FetchPaymentsRequest {
-    google.protobuf.Any from_payload = 1;
-    google.protobuf.Any status = 2;
+message FetchNextPaymentsRequest {
+    bytes from_payload = 1;
+    bytes state = 2;
 }
-message FetchPaymentsResponse {
+message FetchNextPaymentsResponse {
     repeated formance.payments.grpc.proto.Payment payments = 1;
-    google.protobuf.Any new_state = 2;
+    bytes new_state = 2;
 }
 
-message FetchAccountsRequest {
-    google.protobuf.Any from_payload = 1;
-    google.protobuf.Any state = 2;
+message FetchNextAccountsRequest {
+    bytes from_payload = 1;
+    bytes state = 2;
 }
-message FetchAccountsResponse {
+message FetchNextAccountsResponse {
     repeated formance.payments.grpc.proto.Account accounts = 1;
-    google.protobuf.Any new_state = 2;
+    bytes new_state = 2;
 }
-
-message FetchExternalAccountsRequest {}
-message FetchExternalAccountsResponse {}
 
 service Plugin {
-    rpc Name(google.protobuf.Empty) returns (NameResponse) {}
     rpc Install(InstallRequest) returns (InstallResponse) {}
     
-    rpc FetchOthers(FetchOthersRequest) returns (FetchOthersResponse) {}
-    rpc FetchPayments(FetchPaymentsRequest) returns (FetchPaymentsResponse) {}
-    rpc FetchAccounts(FetchAccountsRequest) returns (FetchAccountsResponse) {}
-    rpc FetchExternalAccounts(FetchExternalAccountsRequest) returns (FetchExternalAccountsResponse) {}
+    rpc FetchNextOthers(FetchNextOthersRequest) returns (FetchNextOthersResponse) {}
+    rpc FetchNextPayments(FetchNextPaymentsRequest) returns (FetchNextPaymentsResponse) {}
+    rpc FetchNextAccounts(FetchNextAccountsRequest) returns (FetchNextAccountsResponse) {}
 }

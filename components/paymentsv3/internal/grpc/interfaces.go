@@ -2,9 +2,9 @@ package grpc
 
 import (
 	"context"
-	"plugin"
 
-	"github.com/formancehq/stack/components/paymentsv3/internal/plugins/models"
+	"github.com/formancehq/paymentsv3/internal/grpc/proto/services"
+	"github.com/formancehq/paymentsv3/internal/plugins/models"
 	"github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
 )
@@ -18,12 +18,12 @@ type PSPGRPCPlugin struct {
 }
 
 func (p *PSPGRPCPlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
-	proto.RegisterPSPServer(s, &GRPCServer{Impl: p.Impl})
+	services.RegisterPluginServer(s, &GRPCServer{Impl: p.Impl})
 	return nil
 }
 
 func (p *PSPGRPCPlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
-	return &GRPCClient{client: proto.NewPSPClient(c)}, nil
+	return &GRPCClient{client: services.NewPluginClient(c)}, nil
 }
 
 var PluginMap = map[string]plugin.Plugin{
@@ -31,3 +31,11 @@ var PluginMap = map[string]plugin.Plugin{
 }
 
 var _ plugin.GRPCPlugin = &PSPGRPCPlugin{}
+
+// Handshake is a common handshake that is shared by plugin and host.
+var Handshake = plugin.HandshakeConfig{
+	// This isn't required when using VersionedPlugins
+	ProtocolVersion:  1,
+	MagicCookieKey:   "GRPC_PLUGIN",
+	MagicCookieValue: "test",
+}

@@ -38,7 +38,7 @@ type Transaction struct {
 	} `json:"attributes"`
 }
 
-func (c *Client) GetTransactions(ctx context.Context, accountID string, page int, lastCreatedAt time.Time) ([]*Transaction, error) {
+func (c *Client) GetTransactions(ctx context.Context, accountID string, page, pageSize int, lastCreatedAt time.Time) ([]*Transaction, error) {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "moneycorp", "list_transactions")
 	// now := time.Now()
@@ -79,7 +79,7 @@ func (c *Client) GetTransactions(ctx context.Context, accountID string, page int
 	req.Header.Set("Content-Type", "application/json")
 
 	q := req.URL.Query()
-	q.Add("page[size]", strconv.Itoa(c.pageSize))
+	q.Add("page[size]", strconv.Itoa(pageSize))
 	q.Add("page[number]", fmt.Sprint(page))
 	q.Add("sortBy", "createdAt.asc")
 	req.URL.RawQuery = q.Encode()

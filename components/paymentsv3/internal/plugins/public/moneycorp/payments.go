@@ -8,10 +8,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/formancehq/stack/components/paymentsv3/internal/currency"
-	"github.com/formancehq/stack/components/paymentsv3/internal/plugins/models"
-	"github.com/formancehq/stack/components/paymentsv3/internal/plugins/public/moneycorp/client"
-	"github.com/formancehq/stack/components/paymentsv3/internal/utils"
+	"github.com/formancehq/paymentsv3/internal/plugins/currency"
+	"github.com/formancehq/paymentsv3/internal/plugins/models"
+	"github.com/formancehq/paymentsv3/internal/plugins/public/moneycorp/client"
+	"github.com/formancehq/paymentsv3/internal/utils"
 )
 
 type paymentsState struct {
@@ -22,20 +22,20 @@ type from struct {
 	ID string `json:"id"`
 }
 
-func (p Plugin) fetchPayments(ctx context.Context, req models.FetchPaymentsRequest) (models.FetchPaymentsResponse, error) {
+func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	var oldState paymentsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
-			return models.FetchPaymentsResponse{}, err
+			return models.FetchNextPaymentsResponse{}, err
 		}
 	}
 
 	var from from
 	if req.FromPayload == nil {
-		return models.FetchPaymentsResponse{}, errors.New("missing from payload when fetching payments")
+		return models.FetchNextPaymentsResponse{}, errors.New("missing from payload when fetching payments")
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-		return models.FetchPaymentsResponse{}, err
+		return models.FetchNextPaymentsResponse{}, err
 	}
 
 	newState := paymentsState{
@@ -44,10 +44,10 @@ func (p Plugin) fetchPayments(ctx context.Context, req models.FetchPaymentsReque
 
 	var payments []models.Payment
 	for page := 0; ; page++ {
-		pagedTransactions, err := p.client.GetTransactions(ctx, from.ID, page, oldState.LastCreatedAt)
+		pagedTransactions, err := p.client.GetTransactions(ctx, from.ID, page, req.PageSize, oldState.LastCreatedAt)
 		if err != nil {
 			// retryable error already handled by the client
-			return models.FetchPaymentsResponse{}, err
+			return models.FetchNextPaymentsResponse{}, err
 		}
 
 		if len(pagedTransactions) == 0 {
@@ -57,7 +57,7 @@ func (p Plugin) fetchPayments(ctx context.Context, req models.FetchPaymentsReque
 		for _, transaction := range pagedTransactions {
 			createdAt, err := time.Parse("2006-01-02T15:04:05.999999999", transaction.Attributes.CreatedAt)
 			if err != nil {
-				return models.FetchPaymentsResponse{}, fmt.Errorf("failed to parse transaction date: %v", err)
+				return models.FetchNextPaymentsResponse{}, fmt.Errorf("failed to parse transaction date: %v", err)
 			}
 
 			switch createdAt.Compare(oldState.LastCreatedAt) {
@@ -70,25 +70,33 @@ func (p Plugin) fetchPayments(ctx context.Context, req models.FetchPaymentsReque
 
 			payment, err := transactionToPayments(transaction)
 			if err != nil {
-				return models.FetchPaymentsResponse{}, err
+				return models.FetchNextPaymentsResponse{}, err
 			}
 
 			if payment != nil {
 				payments = append(payments, *payment)
 			}
+
+			if len(payments) == req.PageSize {
+				break
+			}
 		}
 
-		if len(pagedTransactions) < p.client.PageSize() {
+		if len(pagedTransactions) < req.PageSize {
+			break
+		}
+
+		if len(payments) == req.PageSize {
 			break
 		}
 	}
 
 	payload, err := json.Marshal(newState)
 	if err != nil {
-		return models.FetchPaymentsResponse{}, err
+		return models.FetchNextPaymentsResponse{}, err
 	}
 
-	return models.FetchPaymentsResponse{
+	return models.FetchNextPaymentsResponse{
 		Payments: payments,
 		NewState: payload,
 	}, nil
@@ -126,8 +134,8 @@ func transactionToPayments(transaction *client.Transaction) (*models.Payment, er
 		PaymentType:                 paymentType,
 		Amount:                      amount,
 		Asset:                       currency.FormatAsset(supportedCurrenciesWithDecimal, transaction.Attributes.Currency),
-		Scheme:                      models.PaymentSchemeOther,
-		Status:                      models.PaymentStatusSucceeded,
+		Scheme:                      models.PAYMENT_SCHEME_OTHER,
+		Status:                      models.PAYMENT_STATUS_SUCCEEDED,
 		SourceAccountReference:      new(string),
 		DestinationAccountReference: new(string),
 		Metadata:                    map[string]string{},
@@ -135,9 +143,9 @@ func transactionToPayments(transaction *client.Transaction) (*models.Payment, er
 	}
 
 	switch paymentType {
-	case models.PaymentTypePayIn:
+	case models.PAYMENT_TYPE_PAYIN:
 		payment.DestinationAccountReference = utils.Ptr(strconv.Itoa(int(transaction.Attributes.AccountID)))
-	case models.PaymentTypePayOut:
+	case models.PAYMENT_TYPE_PAYOUT:
 		payment.SourceAccountReference = utils.Ptr(strconv.Itoa(int(transaction.Attributes.AccountID)))
 	default:
 		if transaction.Attributes.Direction == "Debit" {
@@ -153,15 +161,15 @@ func transactionToPayments(transaction *client.Transaction) (*models.Payment, er
 func matchPaymentType(transactionType string, transactionDirection string) (models.PaymentType, bool) {
 	switch transactionType {
 	case "Transfer":
-		return models.PaymentTypeTransfer, true
+		return models.PAYMENT_TYPE_TRANSFER, true
 	case "Payment", "Exchange", "Charge", "Refund":
 		switch transactionDirection {
 		case "Debit":
-			return models.PaymentTypePayOut, true
+			return models.PAYMENT_TYPE_PAYOUT, true
 		case "Credit":
-			return models.PaymentTypePayIn, true
+			return models.PAYMENT_TYPE_PAYIN, true
 		}
 	}
 
-	return models.PaymentTypeOther, false
+	return models.PAYMENT_TYPE_OTHER, false
 }

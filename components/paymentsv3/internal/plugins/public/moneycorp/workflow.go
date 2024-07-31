@@ -1,6 +1,6 @@
 package moneycorp
 
-import "github.com/formancehq/stack/components/paymentsv3/internal/plugins/models"
+import "github.com/formancehq/paymentsv3/internal/plugins/models"
 
 func workflow() models.Workflow {
 	return []models.TaskTree{

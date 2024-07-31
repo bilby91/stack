@@ -19,7 +19,7 @@ type Account struct {
 	} `json:"attributes"`
 }
 
-func (c *Client) GetAccounts(ctx context.Context, page int) ([]*Account, error) {
+func (c *Client) GetAccounts(ctx context.Context, page int, pageSize int) ([]*Account, error) {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "moneycorp", "list_accounts")
 	// now := time.Now()
@@ -34,7 +34,7 @@ func (c *Client) GetAccounts(ctx context.Context, page int) ([]*Account, error) 
 	req.Header.Set("Content-Type", "application/json")
 
 	q := req.URL.Query()
-	q.Add("page[size]", strconv.Itoa(c.pageSize))
+	q.Add("page[size]", strconv.Itoa(pageSize))
 	q.Add("page[number]", fmt.Sprint(page))
 	q.Add("sortBy", "id.asc")
 	req.URL.RawQuery = q.Encode()

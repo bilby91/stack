@@ -3,8 +3,8 @@ package moneycorp
 import (
 	"context"
 
-	"github.com/formancehq/stack/components/paymentsv3/internal/plugins/models"
-	"github.com/formancehq/stack/components/paymentsv3/internal/plugins/public/moneycorp/client"
+	"github.com/formancehq/paymentsv3/internal/plugins/models"
+	"github.com/formancehq/paymentsv3/internal/plugins/public/moneycorp/client"
 )
 
 type Plugin struct {
@@ -17,7 +17,7 @@ func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models
 		return models.InstallResponse{}, err
 	}
 
-	client, err := client.NewClient(config.ClientID, config.APIKey, config.Endpoint, config.PageSize)
+	client, err := client.NewClient(config.ClientID, config.APIKey, config.Endpoint)
 	if err != nil {
 		return models.InstallResponse{}, err
 	}
@@ -29,16 +29,16 @@ func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models
 	}, nil
 }
 
-func (p Plugin) FetchAccounts(ctx context.Context, req models.FetchAccountsRequest) (models.FetchAccountsResponse, error) {
-	return p.fetchAccounts(ctx, req)
+func (p Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
+	return p.fetchNextAccounts(ctx, req)
 }
 
-func (p Plugin) FetchPayments(ctx context.Context, req models.FetchPaymentsRequest) (models.FetchPaymentsResponse, error) {
-	return p.fetchPayments(ctx, req)
+func (p Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
+	return p.fetchNextPayments(ctx, req)
 }
 
-func (p Plugin) FetchOthers(ctx context.Context, req models.FetchOthersRequest) (models.FetchOthersResponse, error) {
-	return models.FetchOthersResponse{}, nil
+func (p Plugin) FetchNextOthers(ctx context.Context, req models.FetchNextOthersRequest) (models.FetchNextOthersResponse, error) {
+	return models.FetchNextOthersResponse{}, nil
 }
 
 var _ models.Plugin = &Plugin{}

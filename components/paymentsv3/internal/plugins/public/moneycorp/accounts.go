@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/formancehq/stack/components/paymentsv3/internal/plugins/models"
+	"github.com/formancehq/paymentsv3/internal/plugins/models"
 )
 
 type accountsState struct {
@@ -15,11 +15,11 @@ type accountsState struct {
 	LastIDCreated string `json:"lastIDCreated"`
 }
 
-func (p Plugin) fetchAccounts(ctx context.Context, req models.FetchAccountsRequest) (models.FetchAccountsResponse, error) {
+func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
 	var oldState accountsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
-			return models.FetchAccountsResponse{}, err
+			return models.FetchNextAccountsResponse{}, err
 		}
 	}
 
@@ -32,9 +32,9 @@ func (p Plugin) fetchAccounts(ctx context.Context, req models.FetchAccountsReque
 	for page := oldState.LastPage; ; page++ {
 		newState.LastPage = page
 
-		pagedAccounts, err := p.client.GetAccounts(ctx, page)
+		pagedAccounts, err := p.client.GetAccounts(ctx, page, req.PageSize)
 		if err != nil {
-			return models.FetchAccountsResponse{}, err
+			return models.FetchNextAccountsResponse{}, err
 		}
 
 		if len(pagedAccounts) == 0 {
@@ -48,7 +48,7 @@ func (p Plugin) fetchAccounts(ctx context.Context, req models.FetchAccountsReque
 
 			raw, err := json.Marshal(account)
 			if err != nil {
-				return models.FetchAccountsResponse{}, err
+				return models.FetchNextAccountsResponse{}, err
 			}
 
 			accounts = append(accounts, models.Account{
@@ -61,18 +61,26 @@ func (p Plugin) fetchAccounts(ctx context.Context, req models.FetchAccountsReque
 
 			newState.LastIDCreated = account.ID
 
-			if len(pagedAccounts) < p.client.PageSize() {
+			if len(accounts) == req.PageSize {
 				break
 			}
+		}
+
+		if len(pagedAccounts) < req.PageSize {
+			break
+		}
+
+		if len(accounts) == req.PageSize {
+			break
 		}
 	}
 
 	payload, err := json.Marshal(newState)
 	if err != nil {
-		return models.FetchAccountsResponse{}, err
+		return models.FetchNextAccountsResponse{}, err
 	}
 
-	return models.FetchAccountsResponse{
+	return models.FetchNextAccountsResponse{
 		Accounts: accounts,
 		NewState: payload,
 	}, nil

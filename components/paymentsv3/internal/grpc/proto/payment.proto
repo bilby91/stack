@@ -1,9 +1,8 @@
 syntax = "proto3";
 package formance.payments.grpc.proto;
-option go_package = "github.com/formancehq/stack/components/paymentsv3/internal/grpc/proto";
+option go_package = "github.com/formancehq/paymentsv3/internal/grpc/proto";
 
 import "google/protobuf/timestamp.proto";
-import "google/protobuf/any.proto";
 import "google/protobuf/wrappers.proto";
 
 import "monetary.proto";
@@ -30,23 +29,24 @@ enum PaymentScheme {
     PAYMENT_SCHEME_CARD_ALIPAY = 8;
     PAYMENT_SCHEME_CARD_CUP = 9;
 
-    PAYMENT_SCHEME_SEPA_DEBIT = 100;
-    PAYMENT_SCHEME_SEPA_CREDIT = 101;
-    PAYMENT_SCHEME_SEPA = 102;
+    PAYMENT_SCHEME_SEPA_DEBIT = 10;
+    PAYMENT_SCHEME_SEPA_CREDIT = 11;
+    PAYMENT_SCHEME_SEPA = 12;
 
-    PAYMENT_SCHEME_GOOGLE_PAY = 200;
-    PAYMENT_SCHEME_APPLE_PAY = 201;
-    PAYMENT_SCHEME_DOKU = 202;
-    PAYMENT_SCHEME_DRAGON_PAY = 203;
-    PAYMENT_SCHEME_MAESTRO = 204;
-    PAYMENT_SCHEME_MOL_PAY = 205;
-    PAYMENT_SCHEME_A2A = 206;
-    PAYMENT_SCHEME_ACH_DEBIT = 207;
-    PAYMENT_SCHEME_ACH = 208;
-    PAYMENT_SCHEME_RTP = 209;
+    PAYMENT_SCHEME_GOOGLE_PAY = 13;
+    PAYMENT_SCHEME_APPLE_PAY = 14;
+
+    PAYMENT_SCHEME_DOKU = 15;
+    PAYMENT_SCHEME_DRAGON_PAY = 16;
+    PAYMENT_SCHEME_MAESTRO = 17;
+    PAYMENT_SCHEME_MOL_PAY = 18;
+    PAYMENT_SCHEME_A2A = 19;
+    PAYMENT_SCHEME_ACH_DEBIT = 20;
+    PAYMENT_SCHEME_ACH = 21;
+    PAYMENT_SCHEME_RTP = 22;
 
 
-    PAYMENT_SCHEME_OTHER = 1000;
+    PAYMENT_SCHEME_OTHER = 100;
 }
 
 enum PaymentStatus {
@@ -93,15 +93,15 @@ message Payment {
 
     // Nullable string, we can have or not a source account id depending
     // on the payment type
-    google.protobuf.StringValue source_account_id = 9;
+    google.protobuf.StringValue source_account_reference = 9;
 
     // Nullable string, we can have or not a destination account id depending
     // on the payment type
-    google.protobuf.StringValue destination_account_id = 10;
+    google.protobuf.StringValue destination_account_reference = 10;
 
     // Additional metadata
     map<string, string> metadata = 11;
 
     // The PSP raw message
-    google.protobuf.Any raw = 12;
+    bytes raw = 12;
 }

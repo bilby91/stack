@@ -1,6 +1,6 @@
 syntax = "proto3";
 package formance.payments.grpc.proto;
-option go_package = "github.com/formancehq/stack/components/paymentsv3/internal/grpc/proto";
+option go_package = "github.com/formancehq/paymentsv3/internal/grpc/proto";
 
 enum Capability {
     CAPABILITY_UNKNOWN = 0;
