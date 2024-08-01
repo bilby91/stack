@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/formancehq/paymentsv3/internal/models"
-	temporalworker "github.com/formancehq/paymentsv3/internal/temporal/worker"
+	temporalworker "github.com/formancehq/stack/libs/go-libs/temporal"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
