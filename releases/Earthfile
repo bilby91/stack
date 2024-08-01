@@ -17,7 +17,7 @@ sdk-generate:
   COPY (stack+build-final-spec/latest.json --version=$version) /src/releases/build/latest.json
   WORKDIR /src/releases
   COPY --if-exists --dir ./sdks/go ./sdks/go
-  RUN rm -rf ./sdks/go/gen.yaml ./sdks/go/LICENSE ./sdks/go/.github/workflows
+  RUN rm -rf ./sdks/go/gen.yaml
   COPY --dir templates/sdk/go/* ./sdks/go/
   ENV key ".go.version"
   RUN yq e -i 'eval(env(key)) = env(version)' ./sdks/go/gen.yaml
