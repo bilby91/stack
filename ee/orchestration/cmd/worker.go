@@ -27,12 +27,12 @@ func stackClientModule() fx.Option {
 func workerOptions() fx.Option {
 	return fx.Options(
 		stackClientModule(),
-		temporal.NewWorkerModule(viper.GetString(temporalTaskQueueFlag), worker.Options{
-			TaskQueueActivitiesPerSecond: viper.GetFloat64(temporalMaxParallelActivities),
+		temporal.NewWorkerModule(viper.GetString(temporal.TemporalTaskQueueFlag), worker.Options{
+			TaskQueueActivitiesPerSecond: viper.GetFloat64(temporal.TemporalMaxParallelActivities),
 		}),
 		triggers.NewListenerModule(
 			viper.GetString(stackFlag),
-			viper.GetString(temporalTaskQueueFlag),
+			viper.GetString(temporal.TemporalTaskQueueFlag),
 			viper.GetStringSlice(topicsFlag),
 		),
 	)

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/formancehq/stack/libs/go-libs/logging"
+	"github.com/spf13/viper"
 	"go.opentelemetry.io/otel/trace"
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/api/operatorservice/v1"
@@ -17,11 +18,16 @@ import (
 )
 
 type SearchAttributes struct {
-	InitSearchAttributes bool
-	SearchAttributes     map[string]enums.IndexedValueType
+	SearchAttributes map[string]enums.IndexedValueType
 }
 
-func NewModule(address, namespace string, certStr string, key string, tracer trace.Tracer, searchAttributes SearchAttributes) fx.Option {
+func NewModule(tracer trace.Tracer, searchAttributes SearchAttributes) fx.Option {
+	address := viper.GetString(TemporalAddressFlag)
+	namespace := viper.GetString(TemporalNamespaceFlag)
+	certStr := viper.GetString(TemporalSSLClientCertFlag)
+	key := viper.GetString(TemporalSSLClientKeyFlag)
+	initSearchAttributes := viper.GetBool(TemporalInitSearchAttributes)
+
 	return fx.Options(
 		fx.Provide(func(logger logging.Logger) (client.Options, error) {
 
@@ -58,7 +64,7 @@ func NewModule(address, namespace string, certStr string, key string, tracer tra
 		fx.Invoke(func(lifecycle fx.Lifecycle, c client.Client) {
 			lifecycle.Append(fx.Hook{
 				OnStart: func(ctx context.Context) error {
-					if searchAttributes.InitSearchAttributes {
+					if initSearchAttributes {
 						return createSearchAttributes(ctx, c, namespace, searchAttributes.SearchAttributes)
 					}
 					return nil

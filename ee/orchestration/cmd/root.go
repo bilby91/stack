@@ -37,20 +37,13 @@ var (
 )
 
 const (
-	stackFlag                     = "stack"
-	stackURLFlag                  = "stack-url"
-	stackClientIDFlag             = "stack-client-id"
-	stackClientSecretFlag         = "stack-client-secret"
-	temporalAddressFlag           = "temporal-address"
-	temporalNamespaceFlag         = "temporal-namespace"
-	temporalSSLClientKeyFlag      = "temporal-ssl-client-key"
-	temporalSSLClientCertFlag     = "temporal-ssl-client-cert"
-	temporalTaskQueueFlag         = "temporal-task-queue"
-	temporalInitSearchAttributes  = "temporal-init-search-attributes"
-	temporalMaxParallelActivities = "temporal-max-parallel-activities"
-	topicsFlag                    = "topics"
-	listenFlag                    = "listen"
-	workerFlag                    = "worker"
+	stackFlag             = "stack"
+	stackURLFlag          = "stack-url"
+	stackClientIDFlag     = "stack-client-id"
+	stackClientSecretFlag = "stack-client-secret"
+	topicsFlag            = "topics"
+	listenFlag            = "listen"
+	workerFlag            = "worker"
 )
 
 func NewRootCommand() *cobra.Command {
@@ -66,13 +59,6 @@ func NewRootCommand() *cobra.Command {
 	cmd.PersistentFlags().String(stackURLFlag, "", "Stack url")
 	cmd.PersistentFlags().String(stackClientIDFlag, "", "Stack client ID")
 	cmd.PersistentFlags().String(stackClientSecretFlag, "", "Stack client secret")
-	cmd.PersistentFlags().String(temporalAddressFlag, "", "Temporal server address")
-	cmd.PersistentFlags().String(temporalNamespaceFlag, "default", "Temporal namespace")
-	cmd.PersistentFlags().String(temporalSSLClientKeyFlag, "", "Temporal client key")
-	cmd.PersistentFlags().String(temporalSSLClientCertFlag, "", "Temporal client cert")
-	cmd.PersistentFlags().String(temporalTaskQueueFlag, "default", "Temporal task queue name")
-	cmd.PersistentFlags().Bool(temporalInitSearchAttributes, false, "Init temporal search attributes")
-	cmd.PersistentFlags().Float64(temporalMaxParallelActivities, 10, "Maximum number of parallel activities")
 	cmd.PersistentFlags().StringSlice(topicsFlag, []string{}, "Topics to listen")
 	cmd.PersistentFlags().String(stackFlag, "", "Stack")
 	cmd.AddCommand(
@@ -90,6 +76,7 @@ func NewRootCommand() *cobra.Command {
 	iam.InitFlags(cmd.PersistentFlags())
 	service.BindFlags(cmd)
 	licence.InitCLIFlags(cmd)
+	temporal.InitCLIFlags(cmd)
 
 	return cmd
 }
@@ -113,22 +100,17 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 	return fx.Options(
 		otlptraces.CLITracesModule(),
 		temporal.NewModule(
-			viper.GetString(temporalAddressFlag),
-			viper.GetString(temporalNamespaceFlag),
-			viper.GetString(temporalSSLClientCertFlag),
-			viper.GetString(temporalSSLClientKeyFlag),
 			workflow.Tracer,
 			temporal.SearchAttributes{
-				InitSearchAttributes: viper.GetBool(temporalInitSearchAttributes),
-				SearchAttributes:     temporalclient.SearchAttributes,
+				SearchAttributes: temporalclient.SearchAttributes,
 			},
 		),
 		bunconnect.Module(*connectionOptions),
 		publish.CLIPublisherModule("orchestration"),
 		auth.CLIAuthModule(),
 		licence.CLIModule(ServiceName),
-		workflow.NewModule(viper.GetString(temporalTaskQueueFlag)),
-		triggers.NewModule(viper.GetString(temporalTaskQueueFlag)),
+		workflow.NewModule(viper.GetString(temporal.TemporalTaskQueueFlag)),
+		triggers.NewModule(viper.GetString(temporal.TemporalTaskQueueFlag)),
 		fx.Provide(func() *bunconnect.ConnectionOptions {
 			return connectionOptions
 		}),
