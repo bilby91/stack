@@ -10,6 +10,7 @@ type Plugin interface {
 
 	FetchNextAccounts(context.Context, FetchNextAccountsRequest) (FetchNextAccountsResponse, error)
 	FetchNextPayments(context.Context, FetchNextPaymentsRequest) (FetchNextPaymentsResponse, error)
+	FetchNextExternalAccounts(context.Context, FetchNextExternalAccountsRequest) (FetchNextExternalAccountsResponse, error)
 	FetchNextOthers(context.Context, FetchNextOthersRequest) (FetchNextOthersResponse, error)
 }
 
@@ -32,6 +33,18 @@ type FetchNextAccountsResponse struct {
 	Accounts []Account
 	NewState json.RawMessage
 	HasMore  bool
+}
+
+type FetchNextExternalAccountsRequest struct {
+	FromPayload json.RawMessage
+	State       json.RawMessage
+	PageSize    int
+}
+
+type FetchNextExternalAccountsResponse struct {
+	ExternalAccounts []Account
+	NewState         json.RawMessage
+	HasMore          bool
 }
 
 type FetchNextPaymentsRequest struct {

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/formancehq/paymentsv3/internal/plugins/models"
+	"github.com/formancehq/paymentsv3/internal/models"
 )
 
 type accountsState struct {
@@ -29,6 +29,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 	}
 
 	var accounts []models.Account
+	hasMore := false
 	for page := oldState.LastPage; ; page++ {
 		newState.LastPage = page
 
@@ -71,6 +72,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 		}
 
 		if len(accounts) == req.PageSize {
+			hasMore = true
 			break
 		}
 	}
@@ -83,5 +85,6 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 	return models.FetchNextAccountsResponse{
 		Accounts: accounts,
 		NewState: payload,
+		HasMore:  hasMore,
 	}, nil
 }

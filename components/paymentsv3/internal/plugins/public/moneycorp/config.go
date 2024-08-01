@@ -3,7 +3,7 @@ package moneycorp
 import (
 	"encoding/json"
 
-	"github.com/formancehq/paymentsv3/internal/plugins/models"
+	"github.com/formancehq/paymentsv3/internal/models"
 	"github.com/pkg/errors"
 )
 

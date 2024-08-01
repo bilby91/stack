@@ -8,18 +8,14 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/formancehq/paymentsv3/internal/models"
 	"github.com/formancehq/paymentsv3/internal/plugins/currency"
-	"github.com/formancehq/paymentsv3/internal/plugins/models"
 	"github.com/formancehq/paymentsv3/internal/plugins/public/moneycorp/client"
 	"github.com/formancehq/paymentsv3/internal/utils"
 )
 
 type paymentsState struct {
 	LastCreatedAt time.Time `json:"lastCreatedAt"`
-}
-
-type from struct {
-	ID string `json:"id"`
 }
 
 func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
@@ -30,7 +26,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 		}
 	}
 
-	var from from
+	var from models.Account
 	if req.FromPayload == nil {
 		return models.FetchNextPaymentsResponse{}, errors.New("missing from payload when fetching payments")
 	}
@@ -43,8 +39,9 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 	}
 
 	var payments []models.Payment
+	hasMore := false
 	for page := 0; ; page++ {
-		pagedTransactions, err := p.client.GetTransactions(ctx, from.ID, page, req.PageSize, oldState.LastCreatedAt)
+		pagedTransactions, err := p.client.GetTransactions(ctx, from.Reference, page, req.PageSize, oldState.LastCreatedAt)
 		if err != nil {
 			// retryable error already handled by the client
 			return models.FetchNextPaymentsResponse{}, err
@@ -87,6 +84,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 		}
 
 		if len(payments) == req.PageSize {
+			hasMore = true
 			break
 		}
 	}
@@ -99,6 +97,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 	return models.FetchNextPaymentsResponse{
 		Payments: payments,
 		NewState: payload,
+		HasMore:  hasMore,
 	}, nil
 }
 

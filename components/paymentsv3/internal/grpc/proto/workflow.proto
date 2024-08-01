@@ -4,6 +4,7 @@ option go_package = "github.com/formancehq/paymentsv3/internal/grpc/proto";
 
 message TaskTree {
     message FetchAccounts {}
+    message FetchExternalAccounts {}
     message FetchPayments {}
     message FetchOthers {
         string name = 1;
@@ -13,8 +14,9 @@ message TaskTree {
 
     oneof task {
         FetchAccounts fetch_accounts = 10;
-        FetchPayments fetch_payments = 11;
-        FetchOthers fetch_others = 12;
+        FetchExternalAccounts fetch_external_accounts = 11;
+        FetchPayments fetch_payments = 12;
+        FetchOthers fetch_others = 13;
     }
 }
 

@@ -3,7 +3,7 @@ package moneycorp
 import (
 	"context"
 
-	"github.com/formancehq/paymentsv3/internal/plugins/models"
+	"github.com/formancehq/paymentsv3/internal/models"
 	"github.com/formancehq/paymentsv3/internal/plugins/public/moneycorp/client"
 )
 
@@ -31,6 +31,10 @@ func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models
 
 func (p Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
 	return p.fetchNextAccounts(ctx, req)
+}
+
+func (p Plugin) FetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
+	return p.fetchNextRecipients(ctx, req)
 }
 
 func (p Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {

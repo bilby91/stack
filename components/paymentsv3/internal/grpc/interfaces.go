@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/formancehq/paymentsv3/internal/grpc/proto/services"
-	"github.com/formancehq/paymentsv3/internal/plugins/models"
+	"github.com/formancehq/paymentsv3/internal/models"
 	"github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
 )

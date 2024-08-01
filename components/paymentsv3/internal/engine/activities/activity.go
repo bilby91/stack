@@ -3,7 +3,7 @@ package activities
 import (
 	"errors"
 
-	"github.com/formancehq/paymentsv3/internal/plugins/models"
+	"github.com/formancehq/paymentsv3/internal/models"
 	temporalworker "github.com/formancehq/paymentsv3/internal/temporal/worker"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"

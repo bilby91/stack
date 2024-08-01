@@ -7,7 +7,7 @@ import (
 
 	"github.com/formancehq/paymentsv3/internal/grpc/proto"
 	"github.com/formancehq/paymentsv3/internal/grpc/proto/services"
-	"github.com/formancehq/paymentsv3/internal/plugins/models"
+	"github.com/formancehq/paymentsv3/internal/models"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -166,6 +166,10 @@ func translateTask(taskTree models.TaskTree) *proto.TaskTree {
 	case models.TASK_FETCH_ACCOUNTS:
 		res.Task = &proto.TaskTree_FetchAccounts_{
 			FetchAccounts: &proto.TaskTree_FetchAccounts{},
+		}
+	case models.TASK_FETCH_RECIPIENTS:
+		res.Task = &proto.TaskTree_FetchExternalAccounts_{
+			FetchExternalAccounts: &proto.TaskTree_FetchExternalAccounts{},
 		}
 	case models.TASK_FETCH_PAYMENTS:
 		res.Task = &proto.TaskTree_FetchPayments_{
