@@ -14,7 +14,7 @@ func workflow() models.Workflow {
 					NextTasks: []models.TaskTree{},
 				},
 				{
-					TaskType:  models.TASK_FETCH_RECIPIENTS,
+					TaskType:  models.TASK_FETCH_EXTERNAL_ACCOUNTS,
 					Name:      "fetch_recipients",
 					NextTasks: []models.TaskTree{},
 				},

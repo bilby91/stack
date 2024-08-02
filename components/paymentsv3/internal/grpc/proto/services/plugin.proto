@@ -24,6 +24,7 @@ message FetchNextOthersRequest {
 message FetchNextOthersResponse {
     repeated bytes payload = 1;
     bytes new_state = 2;
+    bool has_more = 3;
 }
 
 message FetchNextPaymentsRequest {
@@ -33,6 +34,7 @@ message FetchNextPaymentsRequest {
 message FetchNextPaymentsResponse {
     repeated formance.payments.grpc.proto.Payment payments = 1;
     bytes new_state = 2;
+    bool has_more = 3;
 }
 
 message FetchNextAccountsRequest {
@@ -42,6 +44,18 @@ message FetchNextAccountsRequest {
 message FetchNextAccountsResponse {
     repeated formance.payments.grpc.proto.Account accounts = 1;
     bytes new_state = 2;
+    bool has_more = 3;
+}
+
+message FetchNextExternalAccountsRequest {
+    bytes from_payload = 1;
+    bytes state = 2;
+}
+
+message FetchNextExternalAccountsResponse {
+    repeated formance.payments.grpc.proto.Account accounts = 1;
+    bytes new_state = 2;
+    bool has_more = 3;
 }
 
 service Plugin {
@@ -50,4 +64,5 @@ service Plugin {
     rpc FetchNextOthers(FetchNextOthersRequest) returns (FetchNextOthersResponse) {}
     rpc FetchNextPayments(FetchNextPaymentsRequest) returns (FetchNextPaymentsResponse) {}
     rpc FetchNextAccounts(FetchNextAccountsRequest) returns (FetchNextAccountsResponse) {}
+    rpc FetchNextExternalAccounts(FetchNextExternalAccountsRequest) returns (FetchNextExternalAccountsResponse) {}
 }

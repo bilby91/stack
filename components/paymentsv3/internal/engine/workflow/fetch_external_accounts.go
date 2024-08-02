@@ -11,23 +11,23 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-type FetchNextPayments struct {
+type FetchNextExternalAccounts struct {
 	FromPayload json.RawMessage `json:"fromPayload"`
 	PageSize    int             `json:"pageSize"`
 }
 
-func (s FetchNextPayments) GetWorkflow() any {
-	return Workflow{}.runFetchNextPayments
+func (s FetchNextExternalAccounts) GetWorkflow() any {
+	return Workflow{}.runFetchNextExternalAccounts
 }
 
-func (w Workflow) runFetchNextPayments(ctx workflow.Context, fetchNextPayments FetchNextPayments, nextTasks []*models.TaskTree) (err error) {
+func (w Workflow) runFetchNextExternalAccounts(ctx workflow.Context, fetchNextExternalAccount FetchNextExternalAccounts, nextTasks []*models.TaskTree) (err error) {
 	var state json.RawMessage
 	// TODO(polo): fetch state from database
 	_ = state
 
 	hasMore := true
 	for hasMore {
-		paymentsResponse, err := activities.FetchNextPayments(
+		externalAccountsResponse, err := activities.FetchNextExternalAccounts(
 			workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
 				StartToCloseTimeout: 60 * time.Second,
 				RetryPolicy: &temporal.RetryPolicy{
@@ -37,26 +37,26 @@ func (w Workflow) runFetchNextPayments(ctx workflow.Context, fetchNextPayments F
 					NonRetryableErrorTypes: []string{},
 				},
 			}),
-			fetchNextPayments.FromPayload,
+			fetchNextExternalAccount.FromPayload,
 			state,
-			fetchNextPayments.PageSize,
+			fetchNextExternalAccount.PageSize,
 		)
 		if err != nil {
-			return errors.Wrap(err, "fetching next payments")
+			return errors.Wrap(err, "fetching next accounts")
 		}
 
-		// TODO(polo): store payments and new state
+		// TODO(polo): store accounts and new state
 
-		hasMore = paymentsResponse.HasMore
-		state = paymentsResponse.NewState
+		hasMore = externalAccountsResponse.HasMore
+		state = externalAccountsResponse.NewState
 
-		for _, payment := range paymentsResponse.Payments {
-			payload, err := json.Marshal(payment)
+		for _, externalAccount := range externalAccountsResponse.ExternalAccounts {
+			payload, err := json.Marshal(externalAccount)
 			if err != nil {
-				return errors.Wrap(err, "marshalling payment")
+				return errors.Wrap(err, "marshalling external account")
 			}
 
-			if err := w.runNextWorkflow(ctx, payload, fetchNextPayments.PageSize, nextTasks); err != nil {
+			if err := w.runNextWorkflow(ctx, payload, fetchNextExternalAccount.PageSize, nextTasks); err != nil {
 				return errors.Wrap(err, "running next workflow")
 			}
 		}

@@ -58,6 +58,28 @@ func (s *GRPCServer) FetchNextAccounts(ctx context.Context, req *services.FetchN
 	return &services.FetchNextAccountsResponse{
 		Accounts: accounts,
 		NewState: resp.NewState,
+		HasMore:  resp.HasMore,
+	}, nil
+}
+
+func (s *GRPCServer) FetchNextExternalAccounts(ctx context.Context, req *services.FetchNextExternalAccountsRequest) (*services.FetchNextExternalAccountsResponse, error) {
+	resp, err := s.Impl.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{
+		FromPayload: req.GetFromPayload(),
+		State:       req.GetState(),
+	})
+	if err != nil {
+		return nil, translateErrorToGRPC(err)
+	}
+
+	accounts := make([]*proto.Account, 0, len(resp.ExternalAccounts))
+	for _, account := range resp.ExternalAccounts {
+		accounts = append(accounts, translateAccount(account))
+	}
+
+	return &services.FetchNextExternalAccountsResponse{
+		Accounts: accounts,
+		NewState: resp.NewState,
+		HasMore:  resp.HasMore,
 	}, nil
 }
 
@@ -78,6 +100,7 @@ func (s *GRPCServer) FetchNextPayments(ctx context.Context, req *services.FetchN
 	return &services.FetchNextPaymentsResponse{
 		Payments: payments,
 		NewState: resp.NewState,
+		HasMore:  resp.HasMore,
 	}, nil
 }
 
@@ -98,6 +121,7 @@ func (s *GRPCServer) FetchNextOthers(ctx context.Context, req *services.FetchNex
 	return &services.FetchNextOthersResponse{
 		Payload:  others,
 		NewState: resp.NewState,
+		HasMore:  resp.HasMore,
 	}, nil
 }
 
@@ -167,7 +191,7 @@ func translateTask(taskTree models.TaskTree) *proto.TaskTree {
 		res.Task = &proto.TaskTree_FetchAccounts_{
 			FetchAccounts: &proto.TaskTree_FetchAccounts{},
 		}
-	case models.TASK_FETCH_RECIPIENTS:
+	case models.TASK_FETCH_EXTERNAL_ACCOUNTS:
 		res.Task = &proto.TaskTree_FetchExternalAccounts_{
 			FetchExternalAccounts: &proto.TaskTree_FetchExternalAccounts{},
 		}

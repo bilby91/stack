@@ -42,6 +42,7 @@ func (p Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPayme
 }
 
 func (p Plugin) FetchNextOthers(ctx context.Context, req models.FetchNextOthersRequest) (models.FetchNextOthersResponse, error) {
+
 	return models.FetchNextOthersResponse{}, nil
 }
 

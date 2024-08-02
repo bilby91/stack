@@ -22,6 +22,7 @@ type PluginClient interface {
 	FetchNextOthers(ctx context.Context, in *FetchNextOthersRequest, opts ...grpc.CallOption) (*FetchNextOthersResponse, error)
 	FetchNextPayments(ctx context.Context, in *FetchNextPaymentsRequest, opts ...grpc.CallOption) (*FetchNextPaymentsResponse, error)
 	FetchNextAccounts(ctx context.Context, in *FetchNextAccountsRequest, opts ...grpc.CallOption) (*FetchNextAccountsResponse, error)
+	FetchNextExternalAccounts(ctx context.Context, in *FetchNextExternalAccountsRequest, opts ...grpc.CallOption) (*FetchNextExternalAccountsResponse, error)
 }
 
 type pluginClient struct {
@@ -68,6 +69,15 @@ func (c *pluginClient) FetchNextAccounts(ctx context.Context, in *FetchNextAccou
 	return out, nil
 }
 
+func (c *pluginClient) FetchNextExternalAccounts(ctx context.Context, in *FetchNextExternalAccountsRequest, opts ...grpc.CallOption) (*FetchNextExternalAccountsResponse, error) {
+	out := new(FetchNextExternalAccountsResponse)
+	err := c.cc.Invoke(ctx, "/formance.payments.grpc.services.Plugin/FetchNextExternalAccounts", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PluginServer is the server API for Plugin service.
 // All implementations must embed UnimplementedPluginServer
 // for forward compatibility
@@ -76,6 +86,7 @@ type PluginServer interface {
 	FetchNextOthers(context.Context, *FetchNextOthersRequest) (*FetchNextOthersResponse, error)
 	FetchNextPayments(context.Context, *FetchNextPaymentsRequest) (*FetchNextPaymentsResponse, error)
 	FetchNextAccounts(context.Context, *FetchNextAccountsRequest) (*FetchNextAccountsResponse, error)
+	FetchNextExternalAccounts(context.Context, *FetchNextExternalAccountsRequest) (*FetchNextExternalAccountsResponse, error)
 	mustEmbedUnimplementedPluginServer()
 }
 
@@ -94,6 +105,9 @@ func (UnimplementedPluginServer) FetchNextPayments(context.Context, *FetchNextPa
 }
 func (UnimplementedPluginServer) FetchNextAccounts(context.Context, *FetchNextAccountsRequest) (*FetchNextAccountsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FetchNextAccounts not implemented")
+}
+func (UnimplementedPluginServer) FetchNextExternalAccounts(context.Context, *FetchNextExternalAccountsRequest) (*FetchNextExternalAccountsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FetchNextExternalAccounts not implemented")
 }
 func (UnimplementedPluginServer) mustEmbedUnimplementedPluginServer() {}
 
@@ -180,6 +194,24 @@ func _Plugin_FetchNextAccounts_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Plugin_FetchNextExternalAccounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FetchNextExternalAccountsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PluginServer).FetchNextExternalAccounts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/formance.payments.grpc.services.Plugin/FetchNextExternalAccounts",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PluginServer).FetchNextExternalAccounts(ctx, req.(*FetchNextExternalAccountsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Plugin_ServiceDesc is the grpc.ServiceDesc for Plugin service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -202,6 +234,10 @@ var Plugin_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FetchNextAccounts",
 			Handler:    _Plugin_FetchNextAccounts_Handler,
+		},
+		{
+			MethodName: "FetchNextExternalAccounts",
+			Handler:    _Plugin_FetchNextExternalAccounts_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

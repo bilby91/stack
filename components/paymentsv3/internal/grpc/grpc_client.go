@@ -22,6 +22,10 @@ func (c *GRPCClient) FetchNextPayments(ctx context.Context, req *services.FetchN
 	return c.client.FetchNextPayments(ctx, req)
 }
 
+func (c *GRPCClient) FetchNextExternalAccounts(ctx context.Context, req *services.FetchNextExternalAccountsRequest) (*services.FetchNextExternalAccountsResponse, error) {
+	return c.client.FetchNextExternalAccounts(ctx, req)
+}
+
 func (c *GRPCClient) FetchNextOthers(ctx context.Context, req *services.FetchNextOthersRequest) (*services.FetchNextOthersResponse, error) {
 	return c.client.FetchNextOthers(ctx, req)
 }

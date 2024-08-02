@@ -2,10 +2,10 @@ package workflow
 
 import (
 	"encoding/json"
-	"log"
 	"time"
 
 	"github.com/formancehq/paymentsv3/internal/engine/activities"
+	"github.com/formancehq/paymentsv3/internal/models"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
@@ -17,10 +17,10 @@ type FetchNextAccounts struct {
 }
 
 func (s FetchNextAccounts) GetWorkflow() any {
-	return RunFetchNextAccounts
+	return Workflow{}.runFetchNextAccounts
 }
 
-func RunFetchNextAccounts(ctx workflow.Context, fetchNextAccount FetchNextAccounts) (err error) {
+func (w Workflow) runFetchNextAccounts(ctx workflow.Context, fetchNextAccount FetchNextAccounts, nextTasks []*models.TaskTree) (err error) {
 	var state json.RawMessage
 	// TODO(polo): fetch state from database
 	_ = state
@@ -45,11 +45,22 @@ func RunFetchNextAccounts(ctx workflow.Context, fetchNextAccount FetchNextAccoun
 			return errors.Wrap(err, "fetching next accounts")
 		}
 
-		log.Println(accountsResponse)
-		hasMore = accountsResponse.HasMore
-	}
+		// TODO(polo): store accounts and new state
 
-	// TODO(polo): store accounts and new state
+		hasMore = accountsResponse.HasMore
+		state = accountsResponse.NewState
+
+		for _, account := range accountsResponse.Accounts {
+			payload, err := json.Marshal(account)
+			if err != nil {
+				return errors.Wrap(err, "marshalling account")
+			}
+
+			if err := w.runNextWorkflow(ctx, payload, fetchNextAccount.PageSize, nextTasks); err != nil {
+				return errors.Wrap(err, "running next workflow")
+			}
+		}
+	}
 
 	return nil
 }
