@@ -38,7 +38,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 		LastCreatedAt: oldState.LastCreatedAt,
 	}
 
-	var payments []models.Payment
+	var payments []models.PSPPayment
 	hasMore := false
 	for page := 0; ; page++ {
 		pagedTransactions, err := p.client.GetTransactions(ctx, from.Reference, page, req.PageSize, oldState.LastCreatedAt)
@@ -101,7 +101,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 	}, nil
 }
 
-func transactionToPayments(transaction *client.Transaction) (*models.Payment, error) {
+func transactionToPayments(transaction *client.Transaction) (*models.PSPPayment, error) {
 	rawData, err := json.Marshal(transaction)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal transaction: %w", err)
@@ -127,10 +127,10 @@ func transactionToPayments(transaction *client.Transaction) (*models.Payment, er
 		return nil, err
 	}
 
-	payment := models.Payment{
+	payment := models.PSPPayment{
 		Reference:                   transaction.ID,
 		CreatedAt:                   createdAt,
-		PaymentType:                 paymentType,
+		Type:                        paymentType,
 		Amount:                      amount,
 		Asset:                       currency.FormatAsset(supportedCurrenciesWithDecimal, transaction.Attributes.Currency),
 		Scheme:                      models.PAYMENT_SCHEME_OTHER,

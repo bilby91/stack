@@ -28,7 +28,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 		LastIDCreated: oldState.LastIDCreated,
 	}
 
-	var accounts []models.Account
+	var accounts []models.PSPAccount
 	hasMore := false
 	for page := oldState.LastPage; ; page++ {
 		newState.LastPage = page
@@ -52,7 +52,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 				return models.FetchNextAccountsResponse{}, err
 			}
 
-			accounts = append(accounts, models.Account{
+			accounts = append(accounts, models.PSPAccount{
 				Reference: account.ID,
 				// Moneycorp does not send the opening date of the account
 				CreatedAt: time.Now().UTC(),

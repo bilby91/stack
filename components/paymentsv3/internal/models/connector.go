@@ -3,12 +3,28 @@ package models
 import (
 	"database/sql/driver"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/gibson042/canonicaljson-go"
 	"github.com/google/uuid"
 )
+
+type Connector struct {
+	// Unique ID of the connector
+	ID ConnectorID
+	// Name given by the user to the connector
+	Name string
+	// Creation date
+	CreatedAt time.Time
+	// Provider type
+	Provider string
+
+	// Config given by the user. It will be encrypted when stored
+	Config json.RawMessage
+}
 
 type ConnectorID struct {
 	Reference uuid.UUID

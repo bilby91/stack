@@ -125,7 +125,7 @@ func (s *GRPCServer) FetchNextOthers(ctx context.Context, req *services.FetchNex
 	}, nil
 }
 
-func translateAccount(account models.Account) *proto.Account {
+func translateAccount(account models.PSPAccount) *proto.Account {
 	return &proto.Account{
 		Reference: account.Reference,
 		Name: func() *wrapperspb.StringValue {
@@ -149,12 +149,12 @@ func translateAccount(account models.Account) *proto.Account {
 	}
 }
 
-func translatePayment(payment models.Payment) *proto.Payment {
+func translatePayment(payment models.PSPPayment) *proto.Payment {
 	return &proto.Payment{
 		Reference:   payment.Reference,
 		CreatedAt:   timestamppb.New(payment.CreatedAt),
 		SyncedAt:    timestamppb.New(time.Now().UTC()),
-		PaymentType: proto.PaymentType(payment.PaymentType),
+		PaymentType: proto.PaymentType(payment.Type),
 		Amount: &proto.Monetary{
 			Asset:  payment.Asset,
 			Amount: []byte(payment.Amount.Text(10)),

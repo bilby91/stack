@@ -11,7 +11,8 @@ import (
 	"github.com/gibson042/canonicaljson-go"
 )
 
-type Account struct {
+// Internal struct used by the plugins
+type PSPAccount struct {
 	// PSP reference of the account. Should be unique.
 	Reference string
 
@@ -31,11 +32,32 @@ type Account struct {
 	Raw json.RawMessage
 }
 
-type ExpandedAccount struct {
-	ID          AccountID
+type Account struct {
+	// Unique Account ID generated from account information
+	ID AccountID
+	// Related Connector ID
 	ConnectorID ConnectorID
 
-	Account
+	// PSP reference of the account. Should be unique.
+	Reference string
+
+	// Account's creation date
+	CreatedAt time.Time
+
+	// Type of account: INTERNAL, EXTERNAL...
+	Type AccountType
+
+	// Optional, human readable name of the account (if existing)
+	Name *string
+	// Optional, if provided the default asset of the account
+	// in minor currencies unit.
+	DefaultAsset *string
+
+	// Additional metadata
+	Metadata map[string]string
+
+	// PSP response in raw
+	Raw json.RawMessage
 }
 
 type AccountID struct {
@@ -102,4 +124,32 @@ func (aid *AccountID) Scan(value interface{}) error {
 	}
 
 	return fmt.Errorf("failed to scan account id: %v", value)
+}
+
+type AccountType string
+
+const (
+	ACCOUNT_TYPE_UNKNOWN AccountType = "UNKNOWN"
+	// Internal accounts refers to user's digital e-wallets. It serves as a
+	// secure storage for funds within the payments provider environment.
+	ACCOUNT_TYPE_INTERNAL AccountType = "INTERNAL"
+	// External accounts represents actual bank accounts of the user.
+	ACCOUNT_TYPE_EXTERNAL AccountType = "EXTERNAL"
+)
+
+func FromPSPAccount(from PSPAccount, accountType AccountType, connectorID ConnectorID) Account {
+	return Account{
+		ID: AccountID{
+			Reference:   from.Reference,
+			ConnectorID: connectorID,
+		},
+		ConnectorID:  connectorID,
+		Reference:    from.Reference,
+		CreatedAt:    from.CreatedAt,
+		Type:         accountType,
+		Name:         from.Name,
+		DefaultAsset: from.DefaultAsset,
+		Metadata:     from.Metadata,
+		Raw:          from.Raw,
+	}
 }

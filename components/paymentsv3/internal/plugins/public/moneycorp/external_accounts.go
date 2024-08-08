@@ -40,7 +40,7 @@ func (p Plugin) fetchNextRecipients(ctx context.Context, req models.FetchNextExt
 		LastCreatedAt: oldState.LastCreatedAt,
 	}
 
-	var accounts []models.Account
+	var accounts []models.PSPAccount
 	hasMore := false
 	for page := oldState.LastPage; ; page++ {
 		newState.LastPage = page
@@ -71,7 +71,7 @@ func (p Plugin) fetchNextRecipients(ctx context.Context, req models.FetchNextExt
 				return models.FetchNextExternalAccountsResponse{}, err
 			}
 
-			accounts = append(accounts, models.Account{
+			accounts = append(accounts, models.PSPAccount{
 				Reference: recipient.ID,
 				// Moneycorp does not send the opening date of the account
 				CreatedAt:    createdAt,

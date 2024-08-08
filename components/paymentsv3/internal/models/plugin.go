@@ -30,7 +30,7 @@ type FetchNextAccountsRequest struct {
 }
 
 type FetchNextAccountsResponse struct {
-	Accounts []Account
+	Accounts []PSPAccount
 	NewState json.RawMessage
 	HasMore  bool
 }
@@ -42,7 +42,7 @@ type FetchNextExternalAccountsRequest struct {
 }
 
 type FetchNextExternalAccountsResponse struct {
-	ExternalAccounts []Account
+	ExternalAccounts []PSPAccount
 	NewState         json.RawMessage
 	HasMore          bool
 }
@@ -54,7 +54,7 @@ type FetchNextPaymentsRequest struct {
 }
 
 type FetchNextPaymentsResponse struct {
-	Payments []Payment
+	Payments []PSPPayment
 	NewState json.RawMessage
 	HasMore  bool
 }
