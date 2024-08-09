@@ -12,19 +12,25 @@ import (
 )
 
 type FetchNextOthers struct {
-	Name        string          `json:"name"`
-	FromPayload json.RawMessage `json:"fromPayload"`
-	PageSize    int             `json:"pageSize"`
+	Config      models.Config      `json:"config"`
+	ConnectorID models.ConnectorID `json:"connectorID"`
+	Name        string             `json:"name"`
+	FromPayload json.RawMessage    `json:"fromPayload"`
 }
 
 func (s FetchNextOthers) GetWorkflow() any {
 	return Workflow{}.runFetchNextOthers
 }
 
-func (w Workflow) runFetchNextOthers(ctx workflow.Context, fetchNextOthers FetchNextOthers, nextTasks []*models.TaskTree) (err error) {
-	var state json.RawMessage
-	// TODO(polo): fetch state from database
-	_ = state
+func (w Workflow) runFetchNextOthers(ctx workflow.Context, fetchNextOthers FetchNextOthers, nextTasks []models.TaskTree) (err error) {
+	stateID := models.StateID{
+		Reference:   workflow.GetInfo(ctx).WorkflowExecution.ID,
+		ConnectorID: fetchNextOthers.ConnectorID,
+	}
+	state, err := activities.FetchState(infiniteRetryContext(ctx), stateID)
+	if err != nil {
+		return errors.Wrapf(err, "retrieving state: %s", stateID.String)
+	}
 
 	hasMore := true
 	for hasMore {
@@ -40,17 +46,23 @@ func (w Workflow) runFetchNextOthers(ctx workflow.Context, fetchNextOthers Fetch
 			}),
 			fetchNextOthers.Name,
 			fetchNextOthers.FromPayload,
-			state,
-			fetchNextOthers.PageSize,
+			state.State,
+			fetchNextOthers.Config.PageSize(),
 		)
 		if err != nil {
 			return errors.Wrap(err, "fetching next others")
 		}
 
-		// TODO(polo): store others and new state
+		state.State = othersResponse.NewState
+		err = activities.StoreState(
+			infiniteRetryContext(ctx),
+			state,
+		)
+		if err != nil {
+			return errors.Wrap(err, "storing state")
+		}
 
-		hasMore = othersResponse.HasMore
-		state = othersResponse.NewState
+		// TODO(polo): send event for others ? store others ?
 
 		for _, other := range othersResponse.Others {
 			payload, err := json.Marshal(other)
@@ -58,10 +70,18 @@ func (w Workflow) runFetchNextOthers(ctx workflow.Context, fetchNextOthers Fetch
 				return errors.Wrap(err, "marshalling other")
 			}
 
-			if err := w.runNextWorkflow(ctx, payload, fetchNextOthers.PageSize, nextTasks); err != nil {
+			if err := w.runNextWorkflow(
+				ctx,
+				fetchNextOthers.Config,
+				fetchNextOthers.ConnectorID,
+				payload,
+				nextTasks,
+			); err != nil {
 				return errors.Wrap(err, "running next workflow")
 			}
 		}
+
+		hasMore = othersResponse.HasMore
 	}
 
 	return nil

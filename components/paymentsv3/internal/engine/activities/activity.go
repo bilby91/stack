@@ -4,12 +4,15 @@ import (
 	"errors"
 
 	"github.com/formancehq/paymentsv3/internal/models"
+	"github.com/formancehq/paymentsv3/internal/storage"
 	temporalworker "github.com/formancehq/stack/libs/go-libs/temporal"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
 type Activities struct {
+	storage storage.Storage
+
 	plugin models.Plugin
 }
 

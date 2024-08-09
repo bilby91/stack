@@ -12,18 +12,24 @@ import (
 )
 
 type FetchNextPayments struct {
-	FromPayload json.RawMessage `json:"fromPayload"`
-	PageSize    int             `json:"pageSize"`
+	Config      models.Config      `json:"config"`
+	ConnectorID models.ConnectorID `json:"connectorID"`
+	FromPayload json.RawMessage    `json:"fromPayload"`
 }
 
 func (s FetchNextPayments) GetWorkflow() any {
 	return Workflow{}.runFetchNextPayments
 }
 
-func (w Workflow) runFetchNextPayments(ctx workflow.Context, fetchNextPayments FetchNextPayments, nextTasks []*models.TaskTree) (err error) {
-	var state json.RawMessage
-	// TODO(polo): fetch state from database
-	_ = state
+func (w Workflow) runFetchNextPayments(ctx workflow.Context, fetchNextPayments FetchNextPayments, nextTasks []models.TaskTree) (err error) {
+	stateID := models.StateID{
+		Reference:   workflow.GetInfo(ctx).WorkflowExecution.ID,
+		ConnectorID: fetchNextPayments.ConnectorID,
+	}
+	state, err := activities.FetchState(infiniteRetryContext(ctx), stateID)
+	if err != nil {
+		return errors.Wrapf(err, "retrieving state: %s", stateID.String)
+	}
 
 	hasMore := true
 	for hasMore {
@@ -38,17 +44,34 @@ func (w Workflow) runFetchNextPayments(ctx workflow.Context, fetchNextPayments F
 				},
 			}),
 			fetchNextPayments.FromPayload,
-			state,
-			fetchNextPayments.PageSize,
+			state.State,
+			fetchNextPayments.Config.PageSize(),
 		)
 		if err != nil {
 			return errors.Wrap(err, "fetching next payments")
 		}
 
-		// TODO(polo): store payments and new state
+		err = activities.StorePayments(
+			infiniteRetryContext(ctx),
+			models.FromPSPPayments(
+				paymentsResponse.Payments,
+				fetchNextPayments.ConnectorID,
+			),
+		)
+		if err != nil {
+			return errors.Wrap(err, "storing next accounts")
+		}
 
-		hasMore = paymentsResponse.HasMore
-		state = paymentsResponse.NewState
+		state.State = paymentsResponse.NewState
+		err = activities.StoreState(
+			infiniteRetryContext(ctx),
+			state,
+		)
+		if err != nil {
+			return errors.Wrap(err, "storing state")
+		}
+
+		// TODO(polo): send events
 
 		for _, payment := range paymentsResponse.Payments {
 			payload, err := json.Marshal(payment)
@@ -56,10 +79,18 @@ func (w Workflow) runFetchNextPayments(ctx workflow.Context, fetchNextPayments F
 				return errors.Wrap(err, "marshalling payment")
 			}
 
-			if err := w.runNextWorkflow(ctx, payload, fetchNextPayments.PageSize, nextTasks); err != nil {
+			if err := w.runNextWorkflow(
+				ctx,
+				fetchNextPayments.Config,
+				fetchNextPayments.ConnectorID,
+				payload,
+				nextTasks,
+			); err != nil {
 				return errors.Wrap(err, "running next workflow")
 			}
 		}
+
+		hasMore = paymentsResponse.HasMore
 	}
 
 	return nil

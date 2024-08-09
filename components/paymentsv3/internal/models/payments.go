@@ -610,6 +610,16 @@ func FromPSPPaymentToPayment(from PSPPayment, connectorID ConnectorID) Payment {
 	}
 }
 
+func FromPSPPayments(from []PSPPayment, connectorID ConnectorID) []Payment {
+	payments := make([]Payment, 0, len(from))
+	for _, p := range from {
+		payment := FromPSPPaymentToPayment(p, connectorID)
+		payment.Adjustments = append(payment.Adjustments, FromPSPPaymentToPaymentAdjustement(p, connectorID))
+		payments = append(payments, payment)
+	}
+	return payments
+}
+
 func FromPSPPaymentToPaymentAdjustement(from PSPPayment, connectorID ConnectorID) PaymentAdjustment {
 	paymentID := PaymentID{
 		PaymentReference: PaymentReference{

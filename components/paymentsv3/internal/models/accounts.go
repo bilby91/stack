@@ -153,3 +153,11 @@ func FromPSPAccount(from PSPAccount, accountType AccountType, connectorID Connec
 		Raw:          from.Raw,
 	}
 }
+
+func FromPSPAccounts(from []PSPAccount, accountType AccountType, connectorID ConnectorID) []Account {
+	accounts := make([]Account, 0, len(from))
+	for _, a := range from {
+		accounts = append(accounts, FromPSPAccount(a, accountType, connectorID))
+	}
+	return accounts
+}

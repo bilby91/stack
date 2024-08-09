@@ -2,53 +2,67 @@ package workflow
 
 import (
 	"encoding/json"
-	"time"
 
 	"github.com/formancehq/paymentsv3/internal/engine/activities"
 	"github.com/formancehq/paymentsv3/internal/models"
 	"github.com/pkg/errors"
-	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
 type FetchNextAccounts struct {
-	FromPayload json.RawMessage `json:"fromPayload"`
-	PageSize    int             `json:"pageSize"`
+	Config      models.Config      `json:"config"`
+	ConnectorID models.ConnectorID `json:"connectorID"`
+	FromPayload json.RawMessage    `json:"fromPayload"`
 }
 
 func (s FetchNextAccounts) GetWorkflow() any {
 	return Workflow{}.runFetchNextAccounts
 }
 
-func (w Workflow) runFetchNextAccounts(ctx workflow.Context, fetchNextAccount FetchNextAccounts, nextTasks []*models.TaskTree) (err error) {
-	var state json.RawMessage
-	// TODO(polo): fetch state from database
-	_ = state
+func (w Workflow) runFetchNextAccounts(ctx workflow.Context, fetchNextAccount FetchNextAccounts, nextTasks []models.TaskTree) (err error) {
+	stateID := models.StateID{
+		Reference:   workflow.GetInfo(ctx).WorkflowExecution.ID,
+		ConnectorID: fetchNextAccount.ConnectorID,
+	}
+	state, err := activities.FetchState(infiniteRetryContext(ctx), stateID)
+	if err != nil {
+		return errors.Wrapf(err, "retrieving state: %s", stateID.String)
+	}
 
 	hasMore := true
 	for hasMore {
 		accountsResponse, err := activities.FetchNextAccounts(
-			workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
-				StartToCloseTimeout: 60 * time.Second,
-				RetryPolicy: &temporal.RetryPolicy{
-					InitialInterval:        time.Second,
-					BackoffCoefficient:     2,
-					MaximumInterval:        100 * time.Second,
-					NonRetryableErrorTypes: []string{},
-				},
-			}),
+			infiniteRetryContext(ctx),
 			fetchNextAccount.FromPayload,
-			state,
-			fetchNextAccount.PageSize,
+			state.State,
+			fetchNextAccount.Config.PageSize(),
 		)
 		if err != nil {
 			return errors.Wrap(err, "fetching next accounts")
 		}
 
-		// TODO(polo): store accounts and new state
+		err = activities.StoreAccounts(
+			infiniteRetryContext(ctx),
+			models.FromPSPAccounts(
+				accountsResponse.Accounts,
+				models.ACCOUNT_TYPE_INTERNAL,
+				fetchNextAccount.ConnectorID,
+			),
+		)
+		if err != nil {
+			return errors.Wrap(err, "storing next accounts")
+		}
 
-		hasMore = accountsResponse.HasMore
-		state = accountsResponse.NewState
+		state.State = accountsResponse.NewState
+		err = activities.StoreState(
+			infiniteRetryContext(ctx),
+			state,
+		)
+		if err != nil {
+			return errors.Wrap(err, "storing state")
+		}
+
+		// TODO(polo): send event
 
 		for _, account := range accountsResponse.Accounts {
 			payload, err := json.Marshal(account)
@@ -56,10 +70,18 @@ func (w Workflow) runFetchNextAccounts(ctx workflow.Context, fetchNextAccount Fe
 				return errors.Wrap(err, "marshalling account")
 			}
 
-			if err := w.runNextWorkflow(ctx, payload, fetchNextAccount.PageSize, nextTasks); err != nil {
+			if err := w.runNextWorkflow(
+				ctx,
+				fetchNextAccount.Config,
+				fetchNextAccount.ConnectorID,
+				payload,
+				nextTasks,
+			); err != nil {
 				return errors.Wrap(err, "running next workflow")
 			}
 		}
+
+		hasMore = accountsResponse.HasMore
 	}
 
 	return nil

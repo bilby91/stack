@@ -3,7 +3,7 @@ package workflow
 import (
 	"context"
 	"encoding/json"
-	"time"
+	"fmt"
 
 	"github.com/formancehq/paymentsv3/internal/models"
 	"github.com/google/uuid"
@@ -12,64 +12,76 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-const (
-	// TODO(polo): add config
-	defaultPolling = 2 * time.Minute
-)
+func (w Workflow) runNextWorkflow(
+	ctx workflow.Context,
+	config models.Config,
+	connectorID models.ConnectorID,
+	fromPayload json.RawMessage,
+	taskTree []models.TaskTree,
+) error {
 
-func (w Workflow) runNextWorkflow(ctx workflow.Context, fromPayload json.RawMessage, pageSize int, taskTree []*models.TaskTree) error {
 	var nextWorkflow interface{}
-
+	var request interface{}
 	for _, task := range taskTree {
 		switch task.TaskType {
 		case models.TASK_FETCH_ACCOUNTS:
 			req := FetchNextAccounts{
+				Config:      config,
+				ConnectorID: connectorID,
 				FromPayload: fromPayload,
-				PageSize:    pageSize,
 			}
 
 			nextWorkflow = req.GetWorkflow()
+			request = req
 		case models.TASK_FETCH_EXTERNAL_ACCOUNTS:
 			req := FetchNextExternalAccounts{
+				Config:      config,
+				ConnectorID: connectorID,
 				FromPayload: fromPayload,
-				PageSize:    pageSize,
 			}
 
 			nextWorkflow = req.GetWorkflow()
+			request = req
 		case models.TASK_FETCH_OTHERS:
 			req := FetchNextOthers{
+				Config:      config,
+				ConnectorID: connectorID,
 				Name:        task.Name,
 				FromPayload: fromPayload,
-				PageSize:    pageSize,
 			}
 
 			nextWorkflow = req.GetWorkflow()
+			request = req
 		case models.TASK_FETCH_PAYMENTS:
 			req := FetchNextPayments{
+				Config:      config,
+				ConnectorID: connectorID,
 				FromPayload: fromPayload,
-				PageSize:    pageSize,
 			}
 
 			nextWorkflow = req.GetWorkflow()
+			request = req
+		default:
+			return fmt.Errorf("unknown task type: %v", task.TaskType)
 		}
 
 		scheduleHandle, err := w.temporalClient.ScheduleClient().Create(ctx.(context.Context), client.ScheduleOptions{
-			// TODO(polo): id more specific
+			// TODO(polo): id more specific ?
 			ID: uuid.New().String(),
 			Spec: client.ScheduleSpec{
 				Intervals: []client.ScheduleIntervalSpec{
 					{
-						// TODO(polo): add config
-						Every: defaultPolling,
+						Every: config.PollingIntervalDuration(),
 					},
 				},
 			},
 			Action: &client.ScheduleWorkflowAction{
 				Workflow: nextWorkflow,
-				// TODO(polo): add more args
-				Args:      []interface{}{},
+				Args: []interface{}{
+					request,
+					task.NextTasks,
+				},
 				TaskQueue: w.taskQueue,
-				// TODO(polo): add retry policy
 			},
 			Overlap:            enums.SCHEDULE_OVERLAP_POLICY_SKIP,
 			TriggerImmediately: true,

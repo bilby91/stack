@@ -2,53 +2,67 @@ package workflow
 
 import (
 	"encoding/json"
-	"time"
 
 	"github.com/formancehq/paymentsv3/internal/engine/activities"
 	"github.com/formancehq/paymentsv3/internal/models"
 	"github.com/pkg/errors"
-	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
 type FetchNextExternalAccounts struct {
-	FromPayload json.RawMessage `json:"fromPayload"`
-	PageSize    int             `json:"pageSize"`
+	Config      models.Config      `json:"config"`
+	ConnectorID models.ConnectorID `json:"connectorID"`
+	FromPayload json.RawMessage    `json:"fromPayload"`
 }
 
 func (s FetchNextExternalAccounts) GetWorkflow() any {
 	return Workflow{}.runFetchNextExternalAccounts
 }
 
-func (w Workflow) runFetchNextExternalAccounts(ctx workflow.Context, fetchNextExternalAccount FetchNextExternalAccounts, nextTasks []*models.TaskTree) (err error) {
-	var state json.RawMessage
-	// TODO(polo): fetch state from database
-	_ = state
+func (w Workflow) runFetchNextExternalAccounts(ctx workflow.Context, fetchNextExternalAccount FetchNextExternalAccounts, nextTasks []models.TaskTree) (err error) {
+	stateID := models.StateID{
+		Reference:   workflow.GetInfo(ctx).WorkflowExecution.ID,
+		ConnectorID: fetchNextExternalAccount.ConnectorID,
+	}
+	state, err := activities.FetchState(infiniteRetryContext(ctx), stateID)
+	if err != nil {
+		return errors.Wrapf(err, "retrieving state: %s", stateID.String)
+	}
 
 	hasMore := true
 	for hasMore {
 		externalAccountsResponse, err := activities.FetchNextExternalAccounts(
-			workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
-				StartToCloseTimeout: 60 * time.Second,
-				RetryPolicy: &temporal.RetryPolicy{
-					InitialInterval:        time.Second,
-					BackoffCoefficient:     2,
-					MaximumInterval:        100 * time.Second,
-					NonRetryableErrorTypes: []string{},
-				},
-			}),
+			infiniteRetryContext(ctx),
 			fetchNextExternalAccount.FromPayload,
-			state,
-			fetchNextExternalAccount.PageSize,
+			state.State,
+			fetchNextExternalAccount.Config.PageSize(),
 		)
 		if err != nil {
 			return errors.Wrap(err, "fetching next accounts")
 		}
 
-		// TODO(polo): store accounts and new state
+		err = activities.StoreAccounts(
+			infiniteRetryContext(ctx),
+			models.FromPSPAccounts(
+				externalAccountsResponse.ExternalAccounts,
+				models.ACCOUNT_TYPE_EXTERNAL,
+				fetchNextExternalAccount.ConnectorID,
+			),
+		)
+		if err != nil {
+			return errors.Wrap(err, "storing next accounts")
+		}
 
-		hasMore = externalAccountsResponse.HasMore
-		state = externalAccountsResponse.NewState
+		state.State = externalAccountsResponse.NewState
+		err = activities.StoreState(
+			infiniteRetryContext(ctx),
+			state,
+		)
+		if err != nil {
+			return errors.Wrap(err, "storing state")
+		}
+
+		// TODO(polo): send event
 
 		for _, externalAccount := range externalAccountsResponse.ExternalAccounts {
 			payload, err := json.Marshal(externalAccount)
@@ -56,10 +70,18 @@ func (w Workflow) runFetchNextExternalAccounts(ctx workflow.Context, fetchNextEx
 				return errors.Wrap(err, "marshalling external account")
 			}
 
-			if err := w.runNextWorkflow(ctx, payload, fetchNextExternalAccount.PageSize, nextTasks); err != nil {
+			if err := w.runNextWorkflow(
+				ctx,
+				fetchNextExternalAccount.Config,
+				fetchNextExternalAccount.ConnectorID,
+				payload,
+				nextTasks,
+			); err != nil {
 				return errors.Wrap(err, "running next workflow")
 			}
 		}
+
+		hasMore = externalAccountsResponse.HasMore
 	}
 
 	return nil
