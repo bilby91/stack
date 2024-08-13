@@ -1,19 +1,13 @@
 package models
 
-type TaskType int
-
-const (
-	TASK_FETCH_OTHERS TaskType = iota
-	TASK_FETCH_ACCOUNTS
-	TASK_FETCH_EXTERNAL_ACCOUNTS
-	TASK_FETCH_PAYMENTS
+import (
+	"time"
 )
 
-type TaskTree struct {
-	TaskType TaskType
-	Name     string
-
-	NextTasks []TaskTree
+type Workflow struct {
+	ID          string
+	ConnectorID ConnectorID
+	CreatedAt   time.Time
+	Capability  Capability
+	Metadata    map[string]string
 }
-
-type Workflow []TaskTree

@@ -46,6 +46,7 @@ func (s *store) UpsertAccounts(ctx context.Context, accounts []models.Account) e
 
 	_, err := s.db.NewInsert().
 		Model(&toInsert).
+		On("CONFLICT (id) DO NOTHING").
 		Exec(ctx)
 
 	return e("failed to insert accounts", err)
@@ -64,6 +65,15 @@ func (s *store) GetAccount(ctx context.Context, id models.AccountID) (*models.Ac
 
 	res := toAccountModels(account)
 	return &res, nil
+}
+
+func (s *store) DeleteAccountsFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
+	_, err := s.db.NewDelete().
+		Model((*account)(nil)).
+		Where("connector_id = ?", connectorID).
+		Exec(ctx)
+
+	return e("failed to delete account", err)
 }
 
 type AccountQuery struct{}

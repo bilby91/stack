@@ -1,0 +1,68 @@
+syntax = "proto3";
+package formance.payments.grpc.services;
+option go_package = "github.com/formancehq/paymentsv3/internal/connectors/grpc/proto/services";
+
+import "account.proto";
+import "capability.proto";
+import "payment.proto";
+import "workflow.proto";
+
+message InstallRequest {
+    bytes config = 1;
+}
+
+message InstallResponse {
+    repeated formance.payments.connectors.grpc.proto.Capability capabilities = 1;
+    formance.payments.connectors.grpc.proto.Workflow workflow = 2;
+}
+
+message FetchNextOthersRequest {
+    string name = 1;
+    bytes from_payload = 2;
+    bytes state = 3;
+}
+message FetchNextOthersResponse {
+    repeated bytes payload = 1;
+    bytes new_state = 2;
+    bool has_more = 3;
+}
+
+message FetchNextPaymentsRequest {
+    bytes from_payload = 1;
+    bytes state = 2;
+}
+message FetchNextPaymentsResponse {
+    repeated formance.payments.connectors.grpc.proto.Payment payments = 1;
+    bytes new_state = 2;
+    bool has_more = 3;
+}
+
+message FetchNextAccountsRequest {
+    bytes from_payload = 1;
+    bytes state = 2;
+}
+message FetchNextAccountsResponse {
+    repeated formance.payments.connectors.grpc.proto.Account accounts = 1;
+    bytes new_state = 2;
+    bool has_more = 3;
+}
+
+message FetchNextExternalAccountsRequest {
+    bytes from_payload = 1;
+    bytes state = 2;
+}
+
+message FetchNextExternalAccountsResponse {
+    repeated formance.payments.connectors.grpc.proto.Account accounts = 1;
+    bytes new_state = 2;
+    bool has_more = 3;
+}
+
+service Plugin {
+    rpc Install(InstallRequest) returns (InstallResponse) {}
+    
+    rpc FetchNextOthers(FetchNextOthersRequest) returns (FetchNextOthersResponse) {}
+    rpc FetchNextPayments(FetchNextPaymentsRequest) returns (FetchNextPaymentsResponse) {}
+    rpc FetchNextAccounts(FetchNextAccountsRequest) returns (FetchNextAccountsResponse) {}
+    rpc FetchNextExternalAccounts(FetchNextExternalAccountsRequest) returns (FetchNextExternalAccountsResponse) {}
+}

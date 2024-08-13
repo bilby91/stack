@@ -20,7 +20,7 @@ type InstallRequest struct {
 
 type InstallResponse struct {
 	Capabilities []Capability
-	Workflow     Workflow
+	Workflow     Tasks
 }
 
 type FetchNextAccountsRequest struct {

@@ -10,8 +10,7 @@ import (
 )
 
 var (
-	configEncryptionKeyFlag = "config-encryption-key"
-	autoMigrateFlag         = "auto-migrate"
+	autoMigrateFlag = "auto-migrate"
 )
 
 func newMigrate() *cobra.Command {

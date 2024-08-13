@@ -125,6 +125,15 @@ func (s *store) GetPayment(ctx context.Context, id models.PaymentID) (*models.Pa
 	return &res, nil
 }
 
+func (s *store) DeletePaymentsFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
+	_, err := s.db.NewDelete().
+		Model((*payment)(nil)).
+		Where("connector_id = ?", connectorID).
+		Exec(ctx)
+
+	return e("failed to delete payments", err)
+}
+
 type PaymentQuery struct{}
 
 type ListPaymentsQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PaymentQuery]]

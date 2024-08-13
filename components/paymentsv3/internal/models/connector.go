@@ -9,30 +9,42 @@ import (
 	"time"
 
 	"github.com/gibson042/canonicaljson-go"
-	"github.com/google/uuid"
 )
 
 type Connector struct {
 	// Unique ID of the connector
-	ID ConnectorID
+	ID ConnectorID `json:"id"`
 	// Name given by the user to the connector
-	Name string
+	Name string `json:"name"`
 	// Creation date
-	CreatedAt time.Time
+	CreatedAt time.Time `json:"createdAt"`
 	// Provider type
-	Provider string
+	Provider string `json:"provider"`
 
 	// Config given by the user. It will be encrypted when stored
-	Config json.RawMessage
+	Config json.RawMessage `json:"config"`
 }
 
 type ConnectorID struct {
-	Reference uuid.UUID
+	Reference string
 	Provider  string
 }
 
+func (cid *ConnectorID) MarshalJSON() ([]byte, error) {
+	return []byte(cid.String()), nil
+}
+
+func (cid *ConnectorID) UnmarshalJSON(data []byte) error {
+	id, err := ConnectorIDFromString(string(data))
+	if err != nil {
+		return err
+	}
+	*cid = id
+	return nil
+}
+
 func (cid *ConnectorID) String() string {
-	if cid == nil || cid.Reference == uuid.Nil {
+	if cid == nil || cid.Reference == "" {
 		return ""
 	}
 
