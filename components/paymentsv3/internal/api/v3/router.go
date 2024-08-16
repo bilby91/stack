@@ -1,6 +1,8 @@
 package v3
 
 import (
+	"net/http"
+
 	"github.com/formancehq/paymentsv3/internal/api/backend"
 	"github.com/formancehq/stack/libs/go-libs/auth"
 	"github.com/formancehq/stack/libs/go-libs/service"
@@ -13,12 +15,95 @@ func newRouter(backend backend.Backend, a auth.Auth) *chi.Mux {
 	r.Group(func(r chi.Router) {
 		r.Use(auth.Middleware(a))
 		r.Use(service.OTLPMiddleware("payments"))
+
+		// Accounts
+		r.Route("/accounts", func(r chi.Router) {
+			r.Get("/", accountsList(backend))
+
+			r.Route("/{accountID}", func(r chi.Router) {
+				r.Get("/", accountsGet(backend))
+				r.Get("/balances", accountsBalances(backend))
+				// TODO(polo): add create account handler
+			})
+		})
+
+		// Bank Accounts
+		r.Route("/bank-accounts", func(r chi.Router) {
+			r.Post("/", bankAccountsCreate(backend))
+			r.Get("/", bankAccountsList(backend))
+
+			r.Route("/{bankAccountID}", func(r chi.Router) {
+				r.Get("/", bankAccountsGet(backend))
+				r.Patch("/metadata", bankAccountsUpdateMetadata(backend))
+				r.Post("/forward", bankAccountsForwardToConnector(backend))
+			})
+		})
+
+		// Payments
+		r.Route("/payments", func(r chi.Router) {
+			r.Get("/", paymentsList(backend))
+
+			r.Route("/{paymentID}", func(r chi.Router) {
+				r.Get("/", paymentsGet(backend))
+				r.Patch("/metadata", paymentsUpdateMetadata(backend))
+				// TODO(polo): add create payment handler
+			})
+		})
+
+		// Pools
+		r.Route("/pools", func(r chi.Router) {
+			r.Post("/", poolsCreate(backend))
+			r.Get("/", poolsList(backend))
+
+			r.Route("/{poolID}", func(r chi.Router) {
+				r.Get("/", poolsGet(backend))
+				r.Delete("/", poolsDelete(backend))
+				r.Get("/balances", poolsBalancesAt(backend))
+
+				r.Route("/accounts/{accountID}", func(r chi.Router) {
+					r.Post("/", poolsAddAccount(backend))
+					r.Delete("/", poolsRemoveAccount(backend))
+				})
+			})
+		})
+
+		// Connectors
 		r.Route("/connectors", func(r chi.Router) {
-			r.Get("/", listConnectors(backend))
-			r.Post("/", installConnector(backend))
-			r.Get("/configs", getConnectorsConfigs(backend))
+			r.Get("/", connectorsList(backend))
+			r.Post("/", connectorsInstall(backend))
+
+			r.Get("/configs", connectorsConfigs(backend))
+
+			r.Route("/{connectorID}", func(r chi.Router) {
+				r.Delete("/", connectorsUninstall(backend))
+				r.Get("/config", connectorsConfig(backend))
+				r.Post("/reset", connectorsReset(backend))
+				// TODO(polo): add update config handler
+				// TODO(polo): add get tasks handler
+				// TODO(polo): add get task handler
+			})
 		})
 	})
 
 	return r
+}
+
+func connectorID(r *http.Request) string {
+	return chi.URLParam(r, "connectorID")
+}
+
+func accountID(r *http.Request) string {
+	return chi.URLParam(r, "accountID")
+}
+
+func paymentID(r *http.Request) string {
+	return chi.URLParam(r, "paymentID")
+}
+
+func poolID(r *http.Request) string {
+	return chi.URLParam(r, "poolID")
+}
+
+func bankAccountID(r *http.Request) string {
+	return chi.URLParam(r, "bankAccountID")
 }

@@ -1,7 +1,22 @@
 package services
 
-import "github.com/formancehq/paymentsv3/internal/connectors/plugins"
+import (
+	"context"
+	"encoding/json"
 
-func (s *Service) GetConnectorConfigs() plugins.Configs {
+	"github.com/formancehq/paymentsv3/internal/connectors/plugins"
+	"github.com/formancehq/paymentsv3/internal/models"
+)
+
+func (s *Service) ConnectorsConfigs() plugins.Configs {
 	return plugins.GetConfigs()
+}
+
+func (s *Service) ConnectorsConfig(ctx context.Context, connectorID models.ConnectorID) (json.RawMessage, error) {
+	connector, err := s.storage.ConnectorsGet(ctx, connectorID)
+	if err != nil {
+		return nil, newStorageError(err, "get connector")
+	}
+
+	return connector.Config, nil
 }

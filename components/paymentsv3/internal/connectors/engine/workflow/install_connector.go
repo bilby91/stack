@@ -2,7 +2,6 @@ package workflow
 
 import (
 	"encoding/json"
-	"time"
 
 	"github.com/formancehq/paymentsv3/internal/connectors/engine/activities"
 	"github.com/formancehq/paymentsv3/internal/models"
@@ -25,11 +24,11 @@ func (w Workflow) runInstallConnector(
 	connector := models.Connector{
 		ID:        installConnector.ConnectorID,
 		Name:      installConnector.ConnectorID.Reference,
-		CreatedAt: time.Now().UTC(), // TODO(polo): workflow.Now()
+		CreatedAt: workflow.Now(ctx).UTC(),
 		Provider:  installConnector.ConnectorID.Provider,
 		Config:    installConnector.RawConfig,
 	}
-	err := activities.StorageStoreConnector(infiniteRetryContext(ctx), connector)
+	err := activities.StorageConnectorsStore(infiniteRetryContext(ctx), connector)
 	if err != nil {
 		return errors.Wrap(err, "failed to store connector")
 	}
@@ -42,7 +41,7 @@ func (w Workflow) runInstallConnector(
 	}
 
 	// Third step: store the workflow of the connector
-	err = activities.StorageStoreTasksTree(infiniteRetryContext(ctx), installConnector.ConnectorID, installResponse.Workflow)
+	err = activities.StorageTasksTreeStore(infiniteRetryContext(ctx), installConnector.ConnectorID, installResponse.Workflow)
 	if err != nil {
 		return errors.Wrap(err, "failed to store tasks tree")
 	}

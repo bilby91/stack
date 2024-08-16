@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/formancehq/paymentsv3/internal/connectors/engine/activities"
 	"github.com/formancehq/paymentsv3/internal/models"
@@ -74,17 +73,17 @@ func (w Workflow) run(
 			return fmt.Errorf("unknown task type: %v", task.TaskType)
 		}
 
-		// Create next workflow in database
-		workflow := models.Workflow{
+		// Create next wk in database
+		wk := models.Workflow{
 			ID:          uuid.New().String(),
 			ConnectorID: connectorID,
-			CreatedAt:   time.Now().UTC(),
+			CreatedAt:   workflow.Now(ctx).UTC(),
 			Capability:  capability,
 			Metadata:    metadata,
 		}
-		err := activities.StorageStoreWorkflow(
+		err := activities.StorageWorkflowsStore(
 			infiniteRetryContext(ctx),
-			workflow,
+			wk,
 		)
 		if err != nil {
 			return err
@@ -110,7 +109,7 @@ func (w Workflow) run(
 				TaskQueue: connectorID.Reference,
 				// Search attributes are used to query workflows
 				SearchAttributes: map[string]any{
-					SearchAttributeWorkflowID: workflow.ID,
+					SearchAttributeWorkflowID: wk.ID,
 				},
 			},
 			Overlap:            enums.SCHEDULE_OVERLAP_POLICY_SKIP,
@@ -120,10 +119,10 @@ func (w Workflow) run(
 			return err
 		}
 
-		err = activities.StorageStoreSchedule(ctx, models.Schedule{
+		err = activities.StorageSchedulesStore(ctx, models.Schedule{
 			ID:          scheduleHandle.GetID(),
 			ConnectorID: connectorID,
-			CreatedAt:   time.Now().UTC(),
+			CreatedAt:   workflow.Now(ctx).UTC(),
 		})
 		if err != nil {
 			return err

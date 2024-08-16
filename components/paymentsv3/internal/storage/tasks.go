@@ -17,7 +17,7 @@ type tasks struct {
 	Tasks       json.RawMessage    `bun:"tasks,type:json,notnull"`
 }
 
-func (s *store) UpsertTasks(ctx context.Context, connectorID models.ConnectorID, ts models.Tasks) error {
+func (s *store) TasksUpsert(ctx context.Context, connectorID models.ConnectorID, ts models.Tasks) error {
 	payload, err := json.Marshal(&ts)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal tasks")
@@ -36,7 +36,7 @@ func (s *store) UpsertTasks(ctx context.Context, connectorID models.ConnectorID,
 	return e("failed to insert tasks", err)
 }
 
-func (s *store) GetTasks(ctx context.Context, connectorID models.ConnectorID) (*models.Tasks, error) {
+func (s *store) TasksGet(ctx context.Context, connectorID models.ConnectorID) (*models.Tasks, error) {
 	var ts tasks
 
 	err := s.db.NewSelect().
@@ -55,7 +55,7 @@ func (s *store) GetTasks(ctx context.Context, connectorID models.ConnectorID) (*
 	return &tasks, nil
 }
 
-func (s *store) DeleteTasksFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
+func (s *store) TasksDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
 	_, err := s.db.NewDelete().
 		Model((*tasks)(nil)).
 		Where("connector_id = ?", connectorID).

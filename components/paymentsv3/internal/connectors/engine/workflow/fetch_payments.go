@@ -25,7 +25,7 @@ func (w Workflow) runFetchNextPayments(
 		Reference:   workflow.GetInfo(ctx).WorkflowExecution.ID,
 		ConnectorID: fetchNextPayments.ConnectorID,
 	}
-	state, err := activities.StorageFetchState(infiniteRetryContext(ctx), stateID)
+	state, err := activities.StorageStatesGet(infiniteRetryContext(ctx), stateID)
 	if err != nil {
 		return errors.Wrapf(err, "retrieving state: %s", stateID.String)
 	}
@@ -43,7 +43,7 @@ func (w Workflow) runFetchNextPayments(
 			return errors.Wrap(err, "fetching next payments")
 		}
 
-		err = activities.StorageStorePayments(
+		err = activities.StoragePaymentsStore(
 			infiniteRetryContext(ctx),
 			models.FromPSPPayments(
 				paymentsResponse.Payments,
@@ -55,7 +55,7 @@ func (w Workflow) runFetchNextPayments(
 		}
 
 		state.State = paymentsResponse.NewState
-		err = activities.StorageStoreState(
+		err = activities.StorageStatesStore(
 			infiniteRetryContext(ctx),
 			state,
 		)

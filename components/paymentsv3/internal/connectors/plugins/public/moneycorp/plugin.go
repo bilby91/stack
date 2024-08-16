@@ -3,6 +3,7 @@ package moneycorp
 import (
 	"context"
 
+	"github.com/formancehq/paymentsv3/internal/connectors/plugins"
 	"github.com/formancehq/paymentsv3/internal/connectors/plugins/public/moneycorp/client"
 	"github.com/formancehq/paymentsv3/internal/models"
 )
@@ -42,7 +43,11 @@ func (p Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPayme
 }
 
 func (p Plugin) FetchNextOthers(ctx context.Context, req models.FetchNextOthersRequest) (models.FetchNextOthersResponse, error) {
-	return models.FetchNextOthersResponse{}, nil
+	return models.FetchNextOthersResponse{}, plugins.ErrNotImplemented
+}
+
+func (p Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAccountRequest) (models.CreateBankAccountResponse, error) {
+	return models.CreateBankAccountResponse{}, plugins.ErrNotImplemented
 }
 
 var _ models.Plugin = &Plugin{}

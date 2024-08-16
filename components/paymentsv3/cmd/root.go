@@ -51,12 +51,6 @@ func NewRootCommand() *cobra.Command {
 	migrate := newMigrate()
 	root.AddCommand(migrate)
 
-	api := newAPIServer()
-	root.AddCommand(api)
-
-	connectors := newConnectorsServer()
-	root.AddCommand(connectors)
-
 	allInOne := newAllInOneServer()
 	root.AddCommand(allInOne)
 

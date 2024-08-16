@@ -21,7 +21,7 @@ type schedule struct {
 	CreatedAt   time.Time          `bun:"created_at,type:timestamp without time zone,notnull"`
 }
 
-func (s *store) UpsertSchedule(ctx context.Context, schedule models.Schedule) error {
+func (s *store) SchedulesUpsert(ctx context.Context, schedule models.Schedule) error {
 	toInsert := fromScheduleModel(schedule)
 
 	_, err := s.db.NewInsert().
@@ -32,7 +32,7 @@ func (s *store) UpsertSchedule(ctx context.Context, schedule models.Schedule) er
 	return e("failed to insert schedule", err)
 }
 
-func (s *store) DeleteSchedulesFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
+func (s *store) SchedulesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
 	_, err := s.db.NewDelete().
 		Model((*schedule)(nil)).
 		Where("connector_id = ?", connectorID).
@@ -67,7 +67,7 @@ func (s *store) schedulesQueryContext(qb query.Builder) (string, []any, error) {
 	}))
 }
 
-func (s *store) ListSchedules(ctx context.Context, q ListSchedulesQuery) (*bunpaginate.Cursor[models.Schedule], error) {
+func (s *store) SchedulesList(ctx context.Context, q ListSchedulesQuery) (*bunpaginate.Cursor[models.Schedule], error) {
 	var (
 		where string
 		args  []any

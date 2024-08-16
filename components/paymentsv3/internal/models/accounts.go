@@ -34,35 +34,39 @@ type PSPAccount struct {
 
 type Account struct {
 	// Unique Account ID generated from account information
-	ID AccountID
+	ID AccountID `json:"id"`
 	// Related Connector ID
-	ConnectorID ConnectorID
+	ConnectorID ConnectorID `json:"connectorID"`
 
 	// PSP reference of the account. Should be unique.
-	Reference string
+	Reference string `json:"reference"`
 
 	// Account's creation date
-	CreatedAt time.Time
+	CreatedAt time.Time `json:"createdAt"`
 
 	// Type of account: INTERNAL, EXTERNAL...
-	Type AccountType
+	Type AccountType `json:"type"`
 
 	// Optional, human readable name of the account (if existing)
-	Name *string
+	Name *string `json:"name"`
 	// Optional, if provided the default asset of the account
 	// in minor currencies unit.
-	DefaultAsset *string
+	DefaultAsset *string `json:"defaultAsset"`
 
 	// Additional metadata
-	Metadata map[string]string
+	Metadata map[string]string `json:"metadata"`
 
 	// PSP response in raw
-	Raw json.RawMessage
+	Raw json.RawMessage `json:"raw"`
 }
 
 type AccountID struct {
 	Reference   string
 	ConnectorID ConnectorID
+}
+
+func (aid *AccountID) MarshalJSON() ([]byte, error) {
+	return []byte(aid.String()), nil
 }
 
 func (aid *AccountID) String() string {
@@ -78,18 +82,19 @@ func (aid *AccountID) String() string {
 	return base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(data)
 }
 
-func AccountIDFromString(value string) (*AccountID, error) {
+func AccountIDFromString(value string) (AccountID, error) {
+	ret := AccountID{}
+
 	data, err := base64.URLEncoding.WithPadding(base64.NoPadding).DecodeString(value)
 	if err != nil {
-		return nil, err
+		return ret, err
 	}
-	ret := AccountID{}
 	err = canonicaljson.Unmarshal(data, &ret)
 	if err != nil {
-		return nil, err
+		return ret, err
 	}
 
-	return &ret, nil
+	return ret, nil
 }
 
 func MustAccountIDFromString(value string) AccountID {
@@ -97,7 +102,7 @@ func MustAccountIDFromString(value string) AccountID {
 	if err != nil {
 		panic(err)
 	}
-	return *id
+	return id
 }
 
 func (aid AccountID) Value() (driver.Value, error) {
@@ -118,7 +123,7 @@ func (aid *AccountID) Scan(value interface{}) error {
 				return fmt.Errorf("failed to parse account id %s: %v", v, err)
 			}
 
-			*aid = *id
+			*aid = id
 			return nil
 		}
 	}

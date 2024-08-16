@@ -10,6 +10,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+var (
+	ErrNotFound = errors.New("plugin not found")
+)
+
 type Plugins interface {
 	RegisterPlugin(connectorID models.ConnectorID) (models.Plugin, error)
 	UnregisterPlugin(connectorID models.ConnectorID) error
@@ -50,7 +54,7 @@ func (p *plugins) RegisterPlugin(connectorID models.ConnectorID) (models.Plugin,
 
 	pluginPath, ok := p.pluginsPath[connectorID.Provider]
 	if !ok {
-		return nil, errors.New("plugin path not found")
+		return nil, errors.Wrap(ErrNotFound, "plugin path not found")
 	}
 
 	pc := plugin.NewClient(&plugin.ClientConfig{

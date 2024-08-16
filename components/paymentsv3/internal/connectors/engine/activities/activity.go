@@ -37,80 +37,104 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.PluginFetchNextOthers,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StorageStoreAccounts",
-			Func: a.StorageStoreAccounts,
+			Name: "PluginCreateBankAccount",
+			Func: a.PluginCreateBankAccount,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StorageDeleteAccounts",
-			Func: a.StorageDeleteAccounts,
+			Name: "StorageAccountsStore",
+			Func: a.StorageAccountsStore,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StorageStorePayments",
-			Func: a.StorageStorePayments,
+			Name: "StorageAccountsDelete",
+			Func: a.StorageAccountsDelete,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StorageDeletePayments",
-			Func: a.StorageDeletePayments,
+			Name: "StoragePaymentsStore",
+			Func: a.StoragePaymentsStore,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StorageFetchState",
-			Func: a.StorageFetchState,
+			Name: "StoragePaymentsDelete",
+			Func: a.StoragePaymentsDelete,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StorageStoreState",
-			Func: a.StorageStoreState,
+			Name: "StorageStatesGet",
+			Func: a.StorageStatesGet,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StorageDeleteStates",
-			Func: a.StorageDeleteStates,
+			Name: "StorageStatesStore",
+			Func: a.StorageStatesStore,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StorageStoreTasksTree",
-			Func: a.StorageStoreTasksTree,
+			Name: "StorageStatesDelete",
+			Func: a.StorageStatesDelete,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StorageDeleteTasksTree",
-			Func: a.StorageDeleteTasksTree,
+			Name: "StorageTasksTreeStore",
+			Func: a.StorageTasksTreeStore,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StorageStoreConnector",
-			Func: a.StorageStoreConnector,
+			Name: "StorageTasksTreeDelete",
+			Func: a.StorageTasksTreeDelete,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StorageDeleteConnector",
-			Func: a.StorageDeleteConnector,
+			Name: "StorageConnectorsStore",
+			Func: a.StorageConnectorsStore,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StorageStoreSchedule",
-			Func: a.StorageStoreSchedule,
+			Name: "StorageConnectorsDelete",
+			Func: a.StorageConnectorsDelete,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StorageFetchSchedules",
-			Func: a.StorageFetchSchedules,
+			Name: "StorageSchedulesStore",
+			Func: a.StorageSchedulesStore,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StorageDeleteSchedules",
-			Func: a.StorageDeleteSchedules,
+			Name: "StorageSchedulesList",
+			Func: a.StorageSchedulesList,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StorageStoreInstance",
-			Func: a.StorageStoreInstance,
+			Name: "StorageSchedulesDelete",
+			Func: a.StorageSchedulesDelete,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StorageUpdateInstance",
-			Func: a.StorageUpdateInstance,
+			Name: "StorageInstancesStore",
+			Func: a.StorageInstancesStore,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StorageDeleteInstances",
-			Func: a.StorageDeleteInstances,
+			Name: "StorageInstancesUpdate",
+			Func: a.StorageInstancesUpdate,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StorageStoreWorkflow",
-			Func: a.StorageStoreWorkflow,
+			Name: "StorageInstancesDelete",
+			Func: a.StorageInstancesDelete,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StorageDeleteWorkflow",
-			Func: a.StorageDeleteWorkflow,
+			Name: "StorageWorkflowsStore",
+			Func: a.StorageWorkflowsStore,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StorageWorkflowsDelete",
+			Func: a.StorageWorkflowsDelete,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StorageBankAccountsDeleteRelatedAccounts",
+			Func: a.StorageBankAccountsDeleteRelatedAccounts,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StorageBankAccountsAddRelatedAccount",
+			Func: a.StorageBankAccountsAddRelatedAccount,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StorageBankAccountsGet",
+			Func: a.StorageBankAccountsGet,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StorageBalancesDelete",
+			Func: a.StorageBalancesDelete,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StorageBalancesStore",
+			Func: a.StorageBalancesStore,
 		})
 }
 

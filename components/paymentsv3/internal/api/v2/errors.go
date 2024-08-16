@@ -27,6 +27,8 @@ func handleServiceErrors(w http.ResponseWriter, r *http.Request, err error) {
 		api.BadRequest(w, ErrValidation, err)
 	case errors.Is(err, services.ErrValidation):
 		api.BadRequest(w, ErrValidation, err)
+	case errors.Is(err, services.ErrNotFound):
+		api.NotFound(w, err)
 	default:
 		api.InternalServerError(w, r, err)
 	}

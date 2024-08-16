@@ -50,69 +50,69 @@ type PSPPayment struct {
 
 type Payment struct {
 	// Unique Payment ID generated from payments information
-	ID PaymentID
+	ID PaymentID `json:"id"`
 	// Related Connector ID
-	ConnectorID ConnectorID
+	ConnectorID ConnectorID `json:"connectorID"`
 
 	// PSP payment/transaction reference. Should be unique.
-	Reference string
+	Reference string `json:"reference"`
 
 	// Payment Creation date.
-	CreatedAt time.Time
+	CreatedAt time.Time `json:"createdAt"`
 
 	// Type of payment: payin, payout, transfer etc...
-	Type PaymentType
+	Type PaymentType `json:"type"`
 
 	// Payment Initial amount
-	InitialAmount *big.Int
+	InitialAmount *big.Int `json:"initialAmount"`
 	// Payment amount.
-	Amount *big.Int
+	Amount *big.Int `json:"amount"`
 
 	// Currency. Should be in minor currencies unit.
 	// For example: USD/2
-	Asset string
+	Asset string `json:"asset"`
 
 	// Payment scheme if existing: visa, mastercard etc...
-	Scheme PaymentScheme
+	Scheme PaymentScheme `json:"scheme"`
 
 	// Payment status: pending, failed, succeeded etc...
-	Status PaymentStatus
+	Status PaymentStatus `json:"status"`
 
 	// Optional, can be filled for payouts and transfers for example.
-	SourceAccountID *AccountID
+	SourceAccountID *AccountID `json:"sourceAccountID"`
 	// Optional, can be filled for payins and transfers for example.
-	DestinationAccountID *AccountID
+	DestinationAccountID *AccountID `json:"destinationAccountID"`
 
 	// Additional metadata
-	Metadata map[string]string
+	Metadata map[string]string `json:"metadata"`
 
 	// Related adjustment
-	Adjustments []PaymentAdjustment
+	Adjustments []PaymentAdjustment `json:"adjustments"`
 }
 
 type PaymentAdjustment struct {
 	// Unique ID of the payment adjustment
-	ID PaymentAdjustmentID
+	ID PaymentAdjustmentID `json:"id"`
 	// Related Payment ID
-	PaymentID PaymentID
+	PaymentID PaymentID `json:"paymentID"`
 
 	// Creation date of the adjustment
-	CreatedAt time.Time
+	CreatedAt time.Time `json:"createdAt"`
 
 	// Status of the payment adjustement
-	Status PaymentStatus
+	Status PaymentStatus `json:"status"`
 
 	// Optional
 	// Amount moved
-	Amount *big.Int
+	Amount *big.Int `json:"amount"`
 	// Optional
 	// Asset related to amount
-	Asset *string
+	Asset *string `json:"asset"`
 
 	// Additional metadata
-	Metadata map[string]string
+	Metadata map[string]string `json:"metadata"`
 	// PSP response in raw
-	Raw json.RawMessage
+	Raw json.RawMessage `json:"raw"`
 }
 
 type PaymentReference struct {
@@ -125,6 +125,10 @@ type PaymentID struct {
 	ConnectorID ConnectorID
 }
 
+func (pid *PaymentID) MarshalJSON() ([]byte, error) {
+	return []byte(pid.String()), nil
+}
+
 func (pid PaymentID) String() string {
 	data, err := canonicaljson.Marshal(pid)
 	if err != nil {
@@ -134,18 +138,18 @@ func (pid PaymentID) String() string {
 	return base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(data)
 }
 
-func PaymentIDFromString(value string) (*PaymentID, error) {
+func PaymentIDFromString(value string) (PaymentID, error) {
+	ret := PaymentID{}
 	data, err := base64.URLEncoding.WithPadding(base64.NoPadding).DecodeString(value)
 	if err != nil {
-		return nil, err
+		return ret, err
 	}
-	ret := PaymentID{}
 	err = canonicaljson.Unmarshal(data, &ret)
 	if err != nil {
-		return nil, err
+		return ret, err
 	}
 
-	return &ret, nil
+	return ret, nil
 }
 
 func MustPaymentIDFromString(value string) *PaymentID {
@@ -180,7 +184,7 @@ func (pid *PaymentID) Scan(value interface{}) error {
 				return fmt.Errorf("failed to parse paymentid %s: %v", v, err)
 			}
 
-			*pid = *id
+			*pid = id
 			return nil
 		}
 	}
@@ -192,6 +196,10 @@ type PaymentAdjustmentID struct {
 	PaymentID
 	CreatedAt time.Time
 	Status    PaymentStatus
+}
+
+func (pid *PaymentAdjustmentID) MarshalJSON() ([]byte, error) {
+	return []byte(pid.String()), nil
 }
 
 func (pid PaymentAdjustmentID) String() string {
@@ -272,6 +280,21 @@ const (
 	PAYMENT_TYPE_OTHER = 100 // match grpc tag
 )
 
+func (t PaymentType) String() string {
+	switch t {
+	case PAYMENT_TYPE_PAYIN:
+		return "PAYIN"
+	case PAYMENT_TYPE_PAYOUT:
+		return "PAYOUT"
+	case PAYMENT_TYPE_TRANSFER:
+		return "TRANSFER"
+	case PAYMENT_TYPE_OTHER:
+		return "OTHER"
+	default:
+		return "UNKNOWN"
+	}
+}
+
 func (t PaymentType) Value() (driver.Value, error) {
 	switch t {
 	case PAYMENT_TYPE_PAYIN:
@@ -332,6 +355,37 @@ const (
 	PAYMENT_STATUS_DISPUTE_LOST
 	PAYMENT_STATUS_OTHER = 100 // match grpc tag
 )
+
+func (t PaymentStatus) String() string {
+	switch t {
+	case PAYMENT_STATUS_UNKNOWN:
+		return "UNKNOWN"
+	case PAYMENT_STATUS_PENDING:
+		return "PENDING"
+	case PAYMENT_STATUS_SUCCEEDED:
+		return "SUCCEEDED"
+	case PAYMENT_STATUS_CANCELLED:
+		return "CANCELLED"
+	case PAYMENT_STATUS_FAILED:
+		return "FAILED"
+	case PAYMENT_STATUS_EXPIRED:
+		return "EXPIRED"
+	case PAYMENT_STATUS_REFUNDED:
+		return "REFUNDED"
+	case PAYMENT_STATUS_REFUNDED_FAILURE:
+		return "REFUNDED_FAILURE"
+	case PAYMENT_STATUS_DISPUTE:
+		return "DISPUTE"
+	case PAYMENT_STATUS_DISPUTE_WON:
+		return "DISPUTE_WON"
+	case PAYMENT_STATUS_DISPUTE_LOST:
+		return "DISPUTE_LOST"
+	case PAYMENT_STATUS_OTHER:
+		return "OTHER"
+	default:
+		return "UNKNOWN"
+	}
+}
 
 func (t PaymentStatus) Value() (driver.Value, error) {
 	switch t {
@@ -443,6 +497,61 @@ const (
 
 	PAYMENT_SCHEME_OTHER = 100 // match grpc tag
 )
+
+func (s PaymentScheme) String() string {
+	switch s {
+	case PAYMENT_SCHEME_UNKNOWN:
+		return "UNKNOWN"
+	case PAYMENT_SCHEME_CARD_VISA:
+		return "CARD_VISA"
+	case PAYMENT_SCHEME_CARD_MASTERCARD:
+		return "CARD_MASTERCARD"
+	case PAYMENT_SCHEME_CARD_AMEX:
+		return "CARD_AMEX"
+	case PAYMENT_SCHEME_CARD_DINERS:
+		return "CARD_DINERS"
+	case PAYMENT_SCHEME_CARD_DISCOVER:
+		return "CARD_DISCOVER"
+	case PAYMENT_SCHEME_CARD_JCB:
+		return "CARD_JCB"
+	case PAYMENT_SCHEME_CARD_UNION_PAY:
+		return "CARD_UNION_PAY"
+	case PAYMENT_SCHEME_CARD_ALIPAY:
+		return "CARD_ALIPAY"
+	case PAYMENT_SCHEME_CARD_CUP:
+		return "CARD_CUP"
+	case PAYMENT_SCHEME_SEPA_DEBIT:
+		return "SEPA_DEBIT"
+	case PAYMENT_SCHEME_SEPA_CREDIT:
+		return "SEPA_CREDIT"
+	case PAYMENT_SCHEME_SEPA:
+		return "SEPA"
+	case PAYMENT_SCHEME_GOOGLE_PAY:
+		return "GOOGLE_PAY"
+	case PAYMENT_SCHEME_APPLE_PAY:
+		return "APPLE_PAY"
+	case PAYMENT_SCHEME_DOKU:
+		return "DOKU"
+	case PAYMENT_SCHEME_DRAGON_PAY:
+		return "DRAGON_PAY"
+	case PAYMENT_SCHEME_MAESTRO:
+		return "MAESTRO"
+	case PAYMENT_SCHEME_MOL_PAY:
+		return "MOL_PAY"
+	case PAYMENT_SCHEME_A2A:
+		return "A2A"
+	case PAYMENT_SCHEME_ACH_DEBIT:
+		return "ACH_DEBIT"
+	case PAYMENT_SCHEME_ACH:
+		return "ACH"
+	case PAYMENT_SCHEME_RTP:
+		return "RTP"
+	case PAYMENT_SCHEME_OTHER:
+		return "OTHER"
+	default:
+		return "UNKNOWN"
+	}
+}
 
 func (s PaymentScheme) Value() (driver.Value, error) {
 	switch s {

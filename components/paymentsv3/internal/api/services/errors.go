@@ -1,12 +1,15 @@
 package services
 
 import (
-	"errors"
 	"fmt"
+
+	"github.com/formancehq/paymentsv3/internal/connectors/engine"
+	"github.com/pkg/errors"
 )
 
 var (
 	ErrValidation = errors.New("validation error")
+	ErrNotFound   = errors.New("not found")
 )
 
 type storageError struct {
@@ -34,5 +37,20 @@ func newStorageError(err error, msg string) error {
 	return &storageError{
 		err: err,
 		msg: msg,
+	}
+}
+
+func handleEngineErrors(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	switch {
+	case errors.Is(err, engine.ErrValidation):
+		return errors.Wrap(ErrValidation, err.Error())
+	case errors.Is(err, engine.ErrNotFound):
+		return errors.Wrap(ErrNotFound, err.Error())
+	default:
+		return err
 	}
 }

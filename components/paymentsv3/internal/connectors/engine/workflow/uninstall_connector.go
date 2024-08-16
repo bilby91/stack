@@ -33,42 +33,47 @@ func (w Workflow) runUninstallConnector(
 	}
 
 	// TODO(polo): workflow.Go
-	err := activities.StorageDeleteSchedules(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+	err := activities.StorageSchedulesDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
 	if err != nil {
 		return err
 	}
 
-	err = activities.StorageDeleteInstances(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+	err = activities.StorageInstancesDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
 	if err != nil {
 		return err
 	}
 
-	err = activities.StorageDeleteTasksTree(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+	err = activities.StorageTasksTreeDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
 	if err != nil {
 		return err
 	}
 
-	err = activities.StorageDeleteWorkflows(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+	err = activities.StorageWorkflowsDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
 	if err != nil {
 		return err
 	}
 
-	err = activities.StorageDeleteAccounts(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+	err = activities.StorageBankAccountsDeleteRelatedAccounts(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
 	if err != nil {
 		return err
 	}
 
-	err = activities.StorageDeletePayments(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+	err = activities.StorageAccountsDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
 	if err != nil {
 		return err
 	}
 
-	err = activities.StorageDeleteStates(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+	err = activities.StoragePaymentsDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
 	if err != nil {
 		return err
 	}
 
-	err = activities.StorageDeleteConnector(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+	err = activities.StorageStatesDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+	if err != nil {
+		return err
+	}
+
+	err = activities.StorageConnectorsDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
 	if err != nil {
 		return err
 	}

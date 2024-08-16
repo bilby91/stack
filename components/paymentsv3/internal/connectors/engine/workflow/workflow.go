@@ -48,6 +48,10 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 			Func: w.runUninstallConnector,
 		}).
 		Append(temporalworker.Definition{
+			Name: "CreateBankAccount",
+			Func: w.runCreateBankAccount,
+		}).
+		Append(temporalworker.Definition{
 			Name: "Run",
 			Func: w.run,
 		})

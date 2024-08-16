@@ -26,7 +26,7 @@ func (w Workflow) runFetchNextExternalAccounts(
 		Reference:   workflow.GetInfo(ctx).WorkflowExecution.ID,
 		ConnectorID: fetchNextExternalAccount.ConnectorID,
 	}
-	state, err := activities.StorageFetchState(infiniteRetryContext(ctx), stateID)
+	state, err := activities.StorageStatesGet(infiniteRetryContext(ctx), stateID)
 	if err != nil {
 		return errors.Wrapf(err, "retrieving state: %s", stateID.String)
 	}
@@ -44,7 +44,7 @@ func (w Workflow) runFetchNextExternalAccounts(
 			return errors.Wrap(err, "fetching next accounts")
 		}
 
-		err = activities.StorageStoreAccounts(
+		err = activities.StorageAccountsStore(
 			infiniteRetryContext(ctx),
 			models.FromPSPAccounts(
 				externalAccountsResponse.ExternalAccounts,
@@ -57,7 +57,7 @@ func (w Workflow) runFetchNextExternalAccounts(
 		}
 
 		state.State = externalAccountsResponse.NewState
-		err = activities.StorageStoreState(
+		err = activities.StorageStatesStore(
 			infiniteRetryContext(ctx),
 			state,
 		)

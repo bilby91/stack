@@ -60,7 +60,7 @@ type paymentAdjustment struct {
 	Metadata map[string]string `bun:"metadata,type:jsonb,nullzero,notnull,default:'{}'"`
 }
 
-func (s *store) UpsertPayment(ctx context.Context, payments []models.Payment) error {
+func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) error {
 	paymentsToInsert := make([]payment, 0, len(payments))
 	adjustmentsToInsert := make([]paymentAdjustment, 0)
 	for _, p := range payments {
@@ -95,7 +95,44 @@ func (s *store) UpsertPayment(ctx context.Context, payments []models.Payment) er
 	return e("failed to commit transactions", tx.Commit())
 }
 
-func (s *store) GetPayment(ctx context.Context, id models.PaymentID) (*models.Payment, error) {
+func (s *store) PaymentsUpdateMetadata(ctx context.Context, id models.PaymentID, metadata map[string]string) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return e("update payment metadata", err)
+	}
+	defer tx.Rollback()
+
+	var payment payment
+	err = tx.NewSelect().
+		Model(&payment).
+		Column("id", "metadata").
+		Where("id = ?", id).
+		Scan(ctx)
+	if err != nil {
+		return e("update payment metadata", err)
+	}
+
+	if payment.Metadata == nil {
+		payment.Metadata = make(map[string]string)
+	}
+
+	for k, v := range metadata {
+		payment.Metadata[k] = v
+	}
+
+	_, err = tx.NewUpdate().
+		Model(&payment).
+		Column("metadata").
+		Where("id = ?", id).
+		Exec(ctx)
+	if err != nil {
+		return e("update payment metadata", err)
+	}
+
+	return e("failed to commit transaction", tx.Commit())
+}
+
+func (s *store) PaymentsGet(ctx context.Context, id models.PaymentID) (*models.Payment, error) {
 	var payment payment
 
 	err := s.db.NewSelect().
@@ -125,7 +162,7 @@ func (s *store) GetPayment(ctx context.Context, id models.PaymentID) (*models.Pa
 	return &res, nil
 }
 
-func (s *store) DeletePaymentsFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
+func (s *store) PaymentsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
 	_, err := s.db.NewDelete().
 		Model((*payment)(nil)).
 		Where("connector_id = ?", connectorID).
@@ -183,7 +220,7 @@ func (s *store) paymentsQueryContext(qb query.Builder) (string, []any, error) {
 	return where, args, err
 }
 
-func (s *store) ListPayments(ctx context.Context, q ListPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error) {
+func (s *store) PaymentsList(ctx context.Context, q ListPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error) {
 	var (
 		where string
 		args  []any

@@ -27,7 +27,7 @@ func (w Workflow) runTerminateSchedules(
 			),
 	)
 	for {
-		schedules, err := activities.StorageFetchSchedules(infiniteRetryContext(ctx), query)
+		schedules, err := activities.StorageSchedulesList(infiniteRetryContext(ctx), query)
 		if err != nil {
 			return err
 		}

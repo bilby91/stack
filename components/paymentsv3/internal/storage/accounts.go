@@ -34,7 +34,7 @@ type account struct {
 	Metadata map[string]string `bun:"metadata,type:jsonb,nullzero,notnull,default:'{}'"`
 }
 
-func (s *store) UpsertAccounts(ctx context.Context, accounts []models.Account) error {
+func (s *store) AccountsUpsert(ctx context.Context, accounts []models.Account) error {
 	if len(accounts) == 0 {
 		return nil
 	}
@@ -52,7 +52,7 @@ func (s *store) UpsertAccounts(ctx context.Context, accounts []models.Account) e
 	return e("failed to insert accounts", err)
 }
 
-func (s *store) GetAccount(ctx context.Context, id models.AccountID) (*models.Account, error) {
+func (s *store) AccountsGet(ctx context.Context, id models.AccountID) (*models.Account, error) {
 	var account account
 
 	err := s.db.NewSelect().
@@ -67,7 +67,7 @@ func (s *store) GetAccount(ctx context.Context, id models.AccountID) (*models.Ac
 	return &res, nil
 }
 
-func (s *store) DeleteAccountsFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
+func (s *store) AccountsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
 	_, err := s.db.NewDelete().
 		Model((*account)(nil)).
 		Where("connector_id = ?", connectorID).
@@ -113,7 +113,7 @@ func (s *store) accountsQueryContext(qb query.Builder) (string, []any, error) {
 	}))
 }
 
-func (s *store) ListAccounts(ctx context.Context, q ListAccountsQuery) (*bunpaginate.Cursor[models.Account], error) {
+func (s *store) AccountsList(ctx context.Context, q ListAccountsQuery) (*bunpaginate.Cursor[models.Account], error) {
 	var (
 		where string
 		args  []any

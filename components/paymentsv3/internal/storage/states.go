@@ -16,7 +16,7 @@ type state struct {
 	State       json.RawMessage    `bun:"state,type:json,notnull"`
 }
 
-func (s *store) UpsertState(ctx context.Context, state models.State) error {
+func (s *store) StatesUpsert(ctx context.Context, state models.State) error {
 	toInsert := fromStateModels(state)
 
 	_, err := s.db.NewInsert().
@@ -27,7 +27,7 @@ func (s *store) UpsertState(ctx context.Context, state models.State) error {
 	return e("failed to upsert state", err)
 }
 
-func (s *store) GetState(ctx context.Context, id models.StateID) (models.State, error) {
+func (s *store) StatesGet(ctx context.Context, id models.StateID) (models.State, error) {
 	var state state
 
 	err := s.db.NewSelect().
@@ -42,7 +42,7 @@ func (s *store) GetState(ctx context.Context, id models.StateID) (models.State, 
 	return res, nil
 }
 
-func (s *store) DeleteStatesFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
+func (s *store) StatesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
 	_, err := s.db.NewDelete().
 		Model((*state)(nil)).
 		Where("connector_id = ?", connectorID).

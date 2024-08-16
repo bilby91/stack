@@ -26,7 +26,7 @@ type workflow struct {
 	Metadata map[string]string `bun:"metadata,type:jsonb,nullzero,notnull,default:'{}'"`
 }
 
-func (s *store) UpsertWorkflow(ctx context.Context, workflow models.Workflow) error {
+func (s *store) WorkflowsUpsert(ctx context.Context, workflow models.Workflow) error {
 	toInsert := fromWorkflowModel(workflow)
 
 	_, err := s.db.NewInsert().
@@ -37,7 +37,7 @@ func (s *store) UpsertWorkflow(ctx context.Context, workflow models.Workflow) er
 	return e("failed to insert workflow", err)
 }
 
-func (s *store) GetWorflow(ctx context.Context, id string) (*models.Workflow, error) {
+func (s *store) WorkflowsGet(ctx context.Context, id string) (*models.Workflow, error) {
 	var w workflow
 
 	err := s.db.NewSelect().
@@ -52,7 +52,7 @@ func (s *store) GetWorflow(ctx context.Context, id string) (*models.Workflow, er
 	return &ret, nil
 }
 
-func (s *store) DeleteWorkflowsFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
+func (s *store) WorkflowsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
 	_, err := s.db.NewDelete().
 		Model((*workflow)(nil)).
 		Where("connector_id = ?", connectorID).
@@ -98,7 +98,7 @@ func (s *store) workflowsQueryContext(qb query.Builder) (string, []any, error) {
 	}))
 }
 
-func (s *store) ListWorkflows(ctx context.Context, q ListWorkflowsQuery) (*bunpaginate.Cursor[models.Workflow], error) {
+func (s *store) WorkflowsList(ctx context.Context, q ListWorkflowsQuery) (*bunpaginate.Cursor[models.Workflow], error) {
 	var (
 		where string
 		args  []any

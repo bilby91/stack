@@ -30,7 +30,7 @@ type connector struct {
 	DecryptedConfig json.RawMessage `bun:"decrypted_config,scanonly"`
 }
 
-func (s *store) InstallConnector(ctx context.Context, c models.Connector) error {
+func (s *store) ConnectorsInstall(ctx context.Context, c models.Connector) error {
 	toInsert := connector{
 		ID:        c.ID,
 		Name:      c.Name,
@@ -64,7 +64,7 @@ func (s *store) InstallConnector(ctx context.Context, c models.Connector) error 
 }
 
 // TODO(polo): find a better way to delete all data
-func (s *store) UninstallConnector(ctx context.Context, id models.ConnectorID) error {
+func (s *store) ConnectorsUninstall(ctx context.Context, id models.ConnectorID) error {
 	_, err := s.db.NewDelete().
 		Model((*connector)(nil)).
 		Where("id = ?", id).
@@ -72,7 +72,7 @@ func (s *store) UninstallConnector(ctx context.Context, id models.ConnectorID) e
 	return e("failed to delete connector", err)
 }
 
-func (s *store) GetConnector(ctx context.Context, id models.ConnectorID) (*models.Connector, error) {
+func (s *store) ConnectorsGet(ctx context.Context, id models.ConnectorID) (*models.Connector, error) {
 	var connector connector
 
 	err := s.db.NewSelect().
@@ -95,10 +95,10 @@ func (s *store) GetConnector(ctx context.Context, id models.ConnectorID) (*model
 
 type ConnectorQuery struct{}
 
-type ListConnectorssQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[ConnectorQuery]]
+type ListConnectorsQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[ConnectorQuery]]
 
-func NewListConnectorsQuery(opts bunpaginate.PaginatedQueryOptions[ConnectorQuery]) ListConnectorssQuery {
-	return ListConnectorssQuery{
+func NewListConnectorsQuery(opts bunpaginate.PaginatedQueryOptions[ConnectorQuery]) ListConnectorsQuery {
+	return ListConnectorsQuery{
 		Order:    bunpaginate.OrderAsc,
 		PageSize: opts.PageSize,
 		Options:  opts,
@@ -117,7 +117,7 @@ func (s *store) connectorsQueryContext(qb query.Builder) (string, []any, error) 
 	}))
 }
 
-func (s *store) ListConnectors(ctx context.Context, q ListConnectorssQuery) (*bunpaginate.Cursor[models.Connector], error) {
+func (s *store) ConnectorsList(ctx context.Context, q ListConnectorsQuery) (*bunpaginate.Cursor[models.Connector], error) {
 	var (
 		where string
 		args  []any

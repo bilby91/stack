@@ -62,7 +62,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 
 			newState.LastIDCreated = account.ID
 
-			if len(accounts) == req.PageSize {
+			if len(accounts) >= req.PageSize {
 				break
 			}
 		}
@@ -71,7 +71,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 			break
 		}
 
-		if len(accounts) == req.PageSize {
+		if len(accounts) >= req.PageSize {
 			hasMore = true
 			break
 		}

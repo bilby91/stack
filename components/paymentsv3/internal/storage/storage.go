@@ -2,57 +2,82 @@ package storage
 
 import (
 	"context"
+	"time"
 
 	"github.com/formancehq/paymentsv3/internal/models"
 	"github.com/formancehq/stack/libs/go-libs/bun/bunpaginate"
+	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 )
 
 type Storage interface {
 	// Connectors
-	InstallConnector(ctx context.Context, c models.Connector) error
-	UninstallConnector(ctx context.Context, id models.ConnectorID) error
-	GetConnector(ctx context.Context, id models.ConnectorID) (*models.Connector, error)
-	ListConnectors(ctx context.Context, q ListConnectorssQuery) (*bunpaginate.Cursor[models.Connector], error)
+	ConnectorsInstall(ctx context.Context, c models.Connector) error
+	ConnectorsUninstall(ctx context.Context, id models.ConnectorID) error
+	ConnectorsGet(ctx context.Context, id models.ConnectorID) (*models.Connector, error)
+	ConnectorsList(ctx context.Context, q ListConnectorsQuery) (*bunpaginate.Cursor[models.Connector], error)
 
 	// Tasks
-	UpsertTasks(ctx context.Context, connectorID models.ConnectorID, tasks models.Tasks) error
-	GetTasks(ctx context.Context, connectorID models.ConnectorID) (*models.Tasks, error)
-	DeleteTasksFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+	TasksUpsert(ctx context.Context, connectorID models.ConnectorID, tasks models.Tasks) error
+	TasksGet(ctx context.Context, connectorID models.ConnectorID) (*models.Tasks, error)
+	TasksDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 
 	// Workflows
-	UpsertWorkflow(ctx context.Context, workflow models.Workflow) error
-	GetWorflow(ctx context.Context, id string) (*models.Workflow, error)
-	ListWorkflows(ctx context.Context, q ListWorkflowsQuery) (*bunpaginate.Cursor[models.Workflow], error)
-	DeleteWorkflowsFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+	WorkflowsUpsert(ctx context.Context, workflow models.Workflow) error
+	WorkflowsGet(ctx context.Context, id string) (*models.Workflow, error)
+	WorkflowsList(ctx context.Context, q ListWorkflowsQuery) (*bunpaginate.Cursor[models.Workflow], error)
+	WorkflowsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 
 	// Accounts
-	UpsertAccounts(ctx context.Context, accounts []models.Account) error
-	GetAccount(ctx context.Context, id models.AccountID) (*models.Account, error)
-	ListAccounts(ctx context.Context, q ListAccountsQuery) (*bunpaginate.Cursor[models.Account], error)
-	DeleteAccountsFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+	AccountsUpsert(ctx context.Context, accounts []models.Account) error
+	AccountsGet(ctx context.Context, id models.AccountID) (*models.Account, error)
+	AccountsList(ctx context.Context, q ListAccountsQuery) (*bunpaginate.Cursor[models.Account], error)
+	AccountsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+
+	// Balances
+	BalancesUpsert(ctx context.Context, balances []models.Balance) error
+	BalancesDeleteForConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+	BalancesList(ctx context.Context, q ListBalancesQuery) (*bunpaginate.Cursor[models.Balance], error)
+	BalancesGetAt(ctx context.Context, accountID models.AccountID, at time.Time) ([]*models.Balance, error)
+
+	// Bank Accounts
+	BankAccountsUpsert(ctx context.Context, bankAccount models.BankAccount) error
+	BankAccountsUpdateMetadata(ctx context.Context, id uuid.UUID, metadata map[string]string) error
+	BankAccountsGet(ctx context.Context, id uuid.UUID, expand bool) (*models.BankAccount, error)
+	BankAccountsList(ctx context.Context, q ListBankAccountsQuery) (*bunpaginate.Cursor[models.BankAccount], error)
+	BankAccountsAddRelatedAccount(ctx context.Context, relatedAccount models.BankAccountRelatedAccount) error
+	BankAccountsDeleteRelatedAccountFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 
 	// Payments
-	UpsertPayment(ctx context.Context, payments []models.Payment) error
-	GetPayment(ctx context.Context, id models.PaymentID) (*models.Payment, error)
-	ListPayments(ctx context.Context, q ListPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error)
-	DeletePaymentsFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+	PaymentsUpsert(ctx context.Context, payments []models.Payment) error
+	PaymentsUpdateMetadata(ctx context.Context, id models.PaymentID, metadata map[string]string) error
+	PaymentsGet(ctx context.Context, id models.PaymentID) (*models.Payment, error)
+	PaymentsList(ctx context.Context, q ListPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error)
+	PaymentsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 
 	// State
-	UpsertState(ctx context.Context, state models.State) error
-	GetState(ctx context.Context, id models.StateID) (models.State, error)
-	DeleteStatesFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+	StatesUpsert(ctx context.Context, state models.State) error
+	StatesGet(ctx context.Context, id models.StateID) (models.State, error)
+	StatesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 
 	// Schedules
-	UpsertSchedule(ctx context.Context, schedule models.Schedule) error
-	ListSchedules(ctx context.Context, q ListSchedulesQuery) (*bunpaginate.Cursor[models.Schedule], error)
-	DeleteSchedulesFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+	SchedulesUpsert(ctx context.Context, schedule models.Schedule) error
+	SchedulesList(ctx context.Context, q ListSchedulesQuery) (*bunpaginate.Cursor[models.Schedule], error)
+	SchedulesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 
 	// Workflow Instances
-	InsertNewInstance(ctx context.Context, instance models.Instance) error
-	UpdateInstance(ctx context.Context, instance models.Instance) error
-	ListInstances(ctx context.Context, q ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error)
-	DeleteInstancesFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+	InstancesUpsert(ctx context.Context, instance models.Instance) error
+	InstancesUpdate(ctx context.Context, instance models.Instance) error
+	InstancesList(ctx context.Context, q ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error)
+	InstancesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+
+	// Pools
+	PoolsUpsert(ctx context.Context, pool models.Pool) error
+	PoolsGet(ctx context.Context, id uuid.UUID) (*models.Pool, error)
+	PoolsDelete(ctx context.Context, id uuid.UUID) error
+	PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID models.AccountID) error
+	PoolsRemoveAccount(ctx context.Context, id uuid.UUID, accountID models.AccountID) error
+	PoolsList(ctx context.Context, q ListPoolsQuery) (*bunpaginate.Cursor[models.Pool], error)
 }
 
 const encryptionOptions = "compress-algo=1, cipher-algo=aes256"

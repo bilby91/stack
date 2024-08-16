@@ -27,7 +27,7 @@ func (w Workflow) runFetchNextOthers(
 		Reference:   workflow.GetInfo(ctx).WorkflowExecution.ID,
 		ConnectorID: fetchNextOthers.ConnectorID,
 	}
-	state, err := activities.StorageFetchState(infiniteRetryContext(ctx), stateID)
+	state, err := activities.StorageStatesGet(infiniteRetryContext(ctx), stateID)
 	if err != nil {
 		return errors.Wrapf(err, "retrieving state: %s", stateID.String)
 	}
@@ -47,7 +47,7 @@ func (w Workflow) runFetchNextOthers(
 		}
 
 		state.State = othersResponse.NewState
-		err = activities.StorageStoreState(
+		err = activities.StorageStatesStore(
 			infiniteRetryContext(ctx),
 			state,
 		)

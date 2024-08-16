@@ -12,6 +12,8 @@ type Plugin interface {
 	FetchNextPayments(context.Context, FetchNextPaymentsRequest) (FetchNextPaymentsResponse, error)
 	FetchNextExternalAccounts(context.Context, FetchNextExternalAccountsRequest) (FetchNextExternalAccountsResponse, error)
 	FetchNextOthers(context.Context, FetchNextOthersRequest) (FetchNextOthersResponse, error)
+
+	CreateBankAccount(context.Context, CreateBankAccountRequest) (CreateBankAccountResponse, error)
 }
 
 type InstallRequest struct {
@@ -70,4 +72,19 @@ type FetchNextOthersResponse struct {
 	Others   []json.RawMessage
 	NewState json.RawMessage
 	HasMore  bool
+}
+
+type FetchBalancesRequest struct {
+	FromPayload json.RawMessage
+}
+
+type FetchBalanceResponse struct {
+}
+
+type CreateBankAccountRequest struct {
+	BankAccount BankAccount
+}
+
+type CreateBankAccountResponse struct {
+	RelatedAccount Account
 }

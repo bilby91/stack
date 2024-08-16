@@ -32,7 +32,7 @@ type instance struct {
 	Error        *string    `bun:"error,type:text,nullzero"`
 }
 
-func (s *store) InsertNewInstance(ctx context.Context, instance models.Instance) error {
+func (s *store) InstancesUpsert(ctx context.Context, instance models.Instance) error {
 	toInsert := fromInstanceModel(instance)
 
 	_, err := s.db.NewInsert().
@@ -43,7 +43,7 @@ func (s *store) InsertNewInstance(ctx context.Context, instance models.Instance)
 	return e("failed to insert new instance", err)
 }
 
-func (s *store) UpdateInstance(ctx context.Context, instance models.Instance) error {
+func (s *store) InstancesUpdate(ctx context.Context, instance models.Instance) error {
 	toUpdate := fromInstanceModel(instance)
 
 	_, err := s.db.NewUpdate().
@@ -54,7 +54,7 @@ func (s *store) UpdateInstance(ctx context.Context, instance models.Instance) er
 	return e("failed to update instance", err)
 }
 
-func (s *store) DeleteInstancesFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
+func (s *store) InstancesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
 	_, err := s.db.NewDelete().
 		Model((*instance)(nil)).
 		Where("connector_id = ?", connectorID).
@@ -89,7 +89,7 @@ func (s *store) instancesQueryContext(qb query.Builder) (string, []any, error) {
 	}))
 }
 
-func (s *store) ListInstances(ctx context.Context, q ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error) {
+func (s *store) InstancesList(ctx context.Context, q ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error) {
 	var (
 		where string
 		args  []any
