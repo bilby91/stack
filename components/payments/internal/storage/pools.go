@@ -160,7 +160,7 @@ func (s *store) PoolsList(ctx context.Context, q ListPoolsQuery) (*bunpaginate.C
 		err   error
 	)
 	if q.Options.QueryBuilder != nil {
-		where, args, err = s.accountsQueryContext(q.Options.QueryBuilder)
+		where, args, err = s.poolsQueryContext(q.Options.QueryBuilder)
 		if err != nil {
 			return nil, err
 		}

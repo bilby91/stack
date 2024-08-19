@@ -13,7 +13,7 @@ sources:
     COPY --pass-args (releases+sdk-generate/go) /src/releases/sdks/go
     WORKDIR /src/components/payments
     COPY go.* .
-    COPY --dir cmd internal .
+    COPY --dir cmd pkg internal .
     COPY main.go .
     SAVE ARTIFACT /src
 

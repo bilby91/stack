@@ -43,6 +43,9 @@ func NewRootCommand() *cobra.Command {
 		Use:               "payments",
 		Short:             "payments",
 		DisableAutoGenTag: true,
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			return bindFlagsToViper(cmd)
+		},
 	}
 
 	root.PersistentFlags().String(configEncryptionKeyFlag, "", "Config encryption key")
@@ -54,6 +57,7 @@ func NewRootCommand() *cobra.Command {
 	root.AddCommand(migrate)
 
 	server := newServer()
+	addAutoMigrateCommand(server)
 	server.Flags().String(listenFlag, ":8080", "Listen address")
 	server.Flags().StringSlice(pluginPathsFlag, nil, "Plugin paths")
 	root.AddCommand(server)

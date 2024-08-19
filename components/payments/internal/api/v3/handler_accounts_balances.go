@@ -1,7 +1,6 @@
 package v3
 
 import (
-	"math/big"
 	"net/http"
 	"time"
 
@@ -12,14 +11,6 @@ import (
 	"github.com/formancehq/stack/libs/go-libs/bun/bunpaginate"
 	"github.com/formancehq/stack/libs/go-libs/pointer"
 )
-
-type balancesResponse struct {
-	AccountID     string    `json:"accountId"`
-	CreatedAt     time.Time `json:"createdAt"`
-	LastUpdatedAt time.Time `json:"lastUpdatedAt"`
-	Asset         string    `json:"asset"`
-	Balance       *big.Int  `json:"balance"`
-}
 
 func accountsBalances(backend backend.Backend) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
