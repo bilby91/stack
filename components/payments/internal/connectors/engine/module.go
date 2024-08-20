@@ -15,6 +15,7 @@ import (
 
 func Module(pluginPath map[string]string) fx.Option {
 	ret := []fx.Option{
+		fx.Supply(worker.Options{}),
 		fx.Provide(New),
 		fx.Provide(func() plugins.Plugins {
 			return plugins.New(pluginPath)
@@ -25,9 +26,11 @@ func Module(pluginPath map[string]string) fx.Option {
 		fx.Provide(func(storage storage.Storage, plugins plugins.Plugins) activities.Activities {
 			return activities.New(storage, plugins)
 		}),
-		fx.Provide(fx.Annotate(func(temporalClient client.Client, workflows, activities []temporal.DefinitionSet, options worker.Options) *Workers {
-			return NewWorkers(temporalClient, workflows, activities, options)
-		}), fx.ParamTags(``, `group:"workflow"`, `group:"activities"`)),
+		fx.Provide(
+			fx.Annotate(func(temporalClient client.Client, workflows, activities []temporal.DefinitionSet, options worker.Options) *Workers {
+				return NewWorkers(temporalClient, workflows, activities, options)
+			}, fx.ParamTags(``, `group:"workflows"`, `group:"activities"`, ``)),
+		),
 		fx.Invoke(func(lc fx.Lifecycle, workers *Workers) {
 			lc.Append(fx.Hook{
 				OnStart: func(ctx context.Context) error {
@@ -42,10 +45,10 @@ func Module(pluginPath map[string]string) fx.Option {
 		}),
 		fx.Provide(fx.Annotate(func(a activities.Activities) temporal.DefinitionSet {
 			return a.DefinitionSet()
-		}), fx.ResultTags(`group:"activities"`)),
+		}, fx.ResultTags(`group:"activities"`))),
 		fx.Provide(fx.Annotate(func(workflow workflow.Workflow) temporal.DefinitionSet {
 			return workflow.DefinitionSet()
-		}), fx.ResultTags(`group:"workflow"`)),
+		}, fx.ResultTags(`group:"workflows"`))),
 	}
 
 	return fx.Options(ret...)

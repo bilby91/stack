@@ -1,5 +1,5 @@
 -- connectors
-create table connectors (
+create table if not exists connectors (
     -- Mandatory fields
     id         varchar not null,
     name       text not null,
@@ -7,7 +7,7 @@ create table connectors (
     provider   text not null,
 
     -- Optional fields
-    config bytea
+    config bytea,
 
     -- Primary key
     primary key (id)
@@ -15,7 +15,7 @@ create table connectors (
 create unique index connectors_unique_name on connectors (name);
 
 -- accounts
-create table accounts (
+create table if not exists accounts (
     -- Mandatory fields
     id           varchar not null,
     connector_id varchar not null,
@@ -40,12 +40,12 @@ alter table accounts
     on delete cascade;
 
 -- balances
-create table balances (
+create table if not exists balances (
     -- Mandatory fields
     account_id      varchar not null,
     connector_id    varchar not null,
-    created_at      timestamp without timezone not null,
-    last_updated_at timestamp without timezone not null,
+    created_at      timestamp without time zone not null,
+    last_updated_at timestamp without time zone not null,
     asset           text not null,
     balance         numeric not null,
 
@@ -59,7 +59,7 @@ alter table balances
     on delete cascade;
 
 -- bank accounts
-create table bank_accounts (
+create table if not exists bank_accounts (
     -- Mandatory fields
     id uuid    not null,
     created_at timestamp without time zone not null,
@@ -77,7 +77,7 @@ create table bank_accounts (
     -- Primary key
     primary key (id)
 );
-create table bank_accounts_related_accounts (
+create table if not exists bank_accounts_related_accounts (
     -- Mandatory fields
     bank_account_id uuid not null,
     account_id      varchar not null,
@@ -101,9 +101,9 @@ alter table bank_accounts_related_accounts
     on delete cascade;
 
 -- payments
-create table payments (
+create table if not exists payments (
     -- Mandatory fields
-    id             varchar not null
+    id             varchar not null,
     connector_id   varchar not null,
     reference      text not null,
     created_at     timestamp without time zone not null,
@@ -130,7 +130,7 @@ alter table payments
     on delete cascade;
 
 -- pools
-create table pools (
+create table if not exists pools (
     -- Mandatory fields
     id         uuid not null,
     name       text not null,
@@ -141,7 +141,7 @@ create table pools (
 );
 create unique index pools_unique_name on pools (name);
 
-create table pools_related_accounts (
+create table if not exists pools_related_accounts (
     -- Mandatory fields
     pool_id     uuid not null,
     account_id  varchar not null,
@@ -159,7 +159,7 @@ alter table pools_related_accounts
     on delete cascade;
 
 -- schedules
-create table schedules (
+create table if not exists schedules (
     -- Mandatory fields
     id text not null,
     connector_id varchar not null,
@@ -174,7 +174,7 @@ alter table schedules
     on delete cascade;
 
 -- states
-create table states (
+create table if not exists states (
     -- Mandatory fields
     id           varchar not null,
     connector_id varchar not null,
@@ -191,7 +191,7 @@ alter table states
     on delete cascade;
 
 -- tasks
-create table tasks (
+create table if not exists tasks (
     -- Mandatory fields
     connector_id varchar not null,
     tasks        json not null,
@@ -205,7 +205,7 @@ alter table tasks
     on delete cascade;
 
 -- workflow
-create table workflows (
+create table if not exists workflows (
     -- Mandatory fields
     id           varchar not null,
     connector_id varchar not null,

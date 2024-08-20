@@ -94,7 +94,7 @@ func Reconcile(ctx Context, stack *v1beta1.Stack, p *v1beta1.Payments, version s
 
 	switch {
 	case semver.IsValid(version) && semver.Compare(version, "v1.0.0-alpha") < 0:
-		if err := createFullDeployment(ctx, stack, p, database, image); err != nil {
+		if err := createFullDeployment(ctx, stack, p, database, image, false); err != nil {
 			return err
 		}
 	case semver.IsValid(version) && semver.Compare(version, "v1.0.0-alpha") >= 0 &&
@@ -109,8 +109,8 @@ func Reconcile(ctx Context, stack *v1beta1.Stack, p *v1beta1.Payments, version s
 		if err := createGateway(ctx, stack, p); err != nil {
 			return err
 		}
-	case !semver.IsValid(version) && semver.Compare(version, "v3.0.0") >= 0:
-		if err := createFullDeployment(ctx, stack, p, database, image); err != nil {
+	case !semver.IsValid(version) || semver.Compare(version, "v3.0.0") >= 0:
+		if err := createFullDeployment(ctx, stack, p, database, image, true); err != nil {
 			return err
 		}
 	}

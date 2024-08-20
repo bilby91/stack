@@ -17,6 +17,17 @@ sources:
     COPY main.go .
     SAVE ARTIFACT /src
 
+compile-plugins:
+    FROM core+builder-image
+    COPY (+sources/*) /src
+    WORKDIR /src/components/payments/internal/connectors/plugins/public
+    FOR c IN $(ls -d */ | sed 's#/##')
+        WORKDIR /src/components/payments/internal/connectors/plugins/public/$c
+        DO --pass-args core+GO_COMPILE --VERSION=$VERSION
+        WORKDIR /src
+        SAVE ARTIFACT /src/components/payments/internal/connectors/plugins/public/$c/main ./plugins/$c
+    END
+
 compile:
     FROM core+builder-image
     COPY (+sources/*) /src
@@ -29,6 +40,7 @@ build-image:
     ENTRYPOINT ["/bin/payments"]
     CMD ["serve"]
     COPY (+compile/main) /bin/payments
+    COPY (+compile-plugins/plugins) /plugins
     ARG REPOSITORY=ghcr.io
     ARG tag=latest
     DO core+SAVE_IMAGE --COMPONENT=payments --REPOSITORY=${REPOSITORY} --TAG=$tag

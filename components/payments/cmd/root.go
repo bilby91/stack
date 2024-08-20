@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/formancehq/payments/internal/api"
@@ -31,9 +32,9 @@ var (
 )
 
 const (
-	pluginPathsFlag         = "plugin-paths"
-	configEncryptionKeyFlag = "config-encryption-key"
-	listenFlag              = "listen"
+	pluginsDirectoryPathFlag = "plugin-directory-path"
+	configEncryptionKeyFlag  = "config-encryption-key"
+	listenFlag               = "listen"
 )
 
 func NewRootCommand() *cobra.Command {
@@ -59,7 +60,7 @@ func NewRootCommand() *cobra.Command {
 	server := newServer()
 	addAutoMigrateCommand(server)
 	server.Flags().String(listenFlag, ":8080", "Listen address")
-	server.Flags().StringSlice(pluginPathsFlag, nil, "Plugin paths")
+	server.Flags().String(pluginsDirectoryPathFlag, "", "Plugin directory path")
 	root.AddCommand(server)
 
 	return root
@@ -96,7 +97,7 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 		return nil, err
 	}
 
-	pluginPaths, err := getPluginsMap(viper.GetStringSlice(pluginPathsFlag))
+	pluginPaths, err := getPluginsMap(viper.GetString(pluginsDirectoryPathFlag))
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +118,6 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 				SearchAttributes: engine.SearchAttributes,
 			},
 		),
-		bunconnect.Module(*connectionOptions),
 		auth.CLIAuthModule(),
 		health.Module(),
 		licence.CLIModule(ServiceName),
@@ -129,18 +129,23 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 	), nil
 }
 
-func getPluginsMap(paths []string) (map[string]string, error) {
-	if len(paths) == 0 {
-		return nil, errors.New("no plugin paths provided")
+func getPluginsMap(pluginsDirectoryPath string) (map[string]string, error) {
+	if pluginsDirectoryPath == "" {
+		return nil, errors.New("missing plugin directory path")
 	}
 
-	if len(paths)%2 != 0 {
-		return nil, errors.New("invalid plugin paths provided")
+	files, err := os.ReadDir(pluginsDirectoryPath)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	plugins := make(map[string]string)
-	for i := 0; i < len(paths); i += 2 {
-		plugins[paths[i]] = paths[i+1]
+	for _, file := range files {
+		if file.IsDir() {
+			panic("plugins directory should not contain directories")
+		}
+
+		plugins[file.Name()] = pluginsDirectoryPath + "/" + file.Name()
 	}
 
 	return plugins, nil
