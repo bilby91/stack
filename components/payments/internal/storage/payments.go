@@ -25,7 +25,7 @@ type payment struct {
 	CreatedAt     time.Time            `bun:"created_at,type:timestamp without time zone,notnull"`
 	Type          models.PaymentType   `bun:"type,type:text,notnull"`
 	InitialAmount *big.Int             `bun:"initial_amount,type:numeric,notnull"`
-	CurrentAmount *big.Int             `bun:"current_amount,type:numeric,notnull"`
+	Amount        *big.Int             `bun:"amount,type:numeric,notnull"`
 	Asset         string               `bun:"asset,type:text,notnull"`
 	Scheme        models.PaymentScheme `bun:"scheme,type:text,notnull"`
 	Status        models.PaymentStatus `bun:"status,type:text,notnull"`
@@ -272,7 +272,7 @@ func fromPaymentModels(from models.Payment) payment {
 		CreatedAt:            from.CreatedAt,
 		Type:                 from.Type,
 		InitialAmount:        from.InitialAmount,
-		CurrentAmount:        from.Amount,
+		Amount:               from.Amount,
 		Asset:                from.Asset,
 		Scheme:               from.Scheme,
 		Status:               from.Status,
@@ -290,7 +290,7 @@ func toPaymentModels(payment payment) models.Payment {
 		Reference:            payment.Reference,
 		CreatedAt:            payment.CreatedAt,
 		Type:                 payment.Type,
-		Amount:               payment.CurrentAmount,
+		Amount:               payment.Amount,
 		Asset:                payment.Asset,
 		Scheme:               payment.Scheme,
 		Status:               payment.Status,

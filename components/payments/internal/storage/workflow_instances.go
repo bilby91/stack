@@ -13,11 +13,11 @@ import (
 )
 
 type instance struct {
-	bun.BaseModel `bun:"table:workflow_instances"`
+	bun.BaseModel `bun:"table:workflows_instances"`
 
 	// Mandatory fields
 	ID          string             `bun:"id,pk,type:text,notnull"`
-	WorkflowID  string             `bun:"workflow_id,pk,type:text,notnull"`
+	ScheduleID  string             `bun:"schedule_id,pk,type:text,notnull"`
 	ConnectorID models.ConnectorID `bun:"connector_id,pk,type:character varying,notnull"`
 	CreatedAt   time.Time          `bun:"created_at,type:timestamp without time zone,notnull"`
 	UpdatedAt   time.Time          `bun:"updated_at,type:timestamp without time zone,notnull"`
@@ -37,7 +37,7 @@ func (s *store) InstancesUpsert(ctx context.Context, instance models.Instance) e
 
 	_, err := s.db.NewInsert().
 		Model(&toInsert).
-		On("CONFLICT (id, workflow_id, connector_id) DO NOTHING").
+		On("CONFLICT (id, schedule_id, connector_id) DO NOTHING").
 		Exec(ctx)
 
 	return e("failed to insert new instance", err)
@@ -48,6 +48,10 @@ func (s *store) InstancesUpdate(ctx context.Context, instance models.Instance) e
 
 	_, err := s.db.NewUpdate().
 		Model(&toUpdate).
+		Set("updated_at = ?", instance.UpdatedAt).
+		Set("terminated = ?", instance.Terminated).
+		Set("terminated_at = ?", instance.TerminatedAt).
+		Set("error = ?", instance.Error).
 		WherePK().
 		Exec(ctx)
 
@@ -78,7 +82,8 @@ func NewListInstancesQuery(opts bunpaginate.PaginatedQueryOptions[InstanceQuery]
 func (s *store) instancesQueryContext(qb query.Builder) (string, []any, error) {
 	return qb.Build(query.ContextFn(func(key, operator string, value any) (string, []any, error) {
 		switch {
-		case key == "connector_id":
+		case key == "schedule_id",
+			key == "connector_id":
 			if operator != "$match" {
 				return "", nil, errors.Wrap(ErrValidation, "'connector_id' column can only be used with $match")
 			}
@@ -135,7 +140,7 @@ func (s *store) InstancesList(ctx context.Context, q ListInstancesQuery) (*bunpa
 func fromInstanceModel(from models.Instance) instance {
 	return instance{
 		ID:           from.ID,
-		WorkflowID:   from.WorkflowID,
+		ScheduleID:   from.ScheduleID,
 		ConnectorID:  from.ConnectorID,
 		CreatedAt:    from.CreatedAt,
 		UpdatedAt:    from.UpdatedAt,
@@ -148,7 +153,7 @@ func fromInstanceModel(from models.Instance) instance {
 func toInstanceModel(from instance) models.Instance {
 	return models.Instance{
 		ID:           from.ID,
-		WorkflowID:   from.WorkflowID,
+		ScheduleID:   from.ScheduleID,
 		ConnectorID:  from.ConnectorID,
 		CreatedAt:    from.CreatedAt,
 		UpdatedAt:    from.UpdatedAt,

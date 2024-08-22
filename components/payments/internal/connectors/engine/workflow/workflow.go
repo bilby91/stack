@@ -1,19 +1,40 @@
 package workflow
 
 import (
+	"encoding/json"
+
+	"github.com/formancehq/payments/internal/connectors/engine/plugins"
 	temporalworker "github.com/formancehq/stack/libs/go-libs/temporal"
 	"go.temporal.io/sdk/client"
 )
 
-const SearchAttributeWorkflowID = "PaymentWorkflowID"
+const (
+	SearchAttributeWorkflowID = "PaymentWorkflowID"
+	SearchAttributeScheduleID = "PaymentScheduleID"
+)
+
+type FromPayload struct {
+	ID      string          `json:"id"`
+	Payload json.RawMessage `json:"payload"`
+}
+
+func (f *FromPayload) GetPayload() json.RawMessage {
+	if f == nil {
+		return nil
+	}
+	return f.Payload
+}
 
 type Workflow struct {
 	temporalClient client.Client
+
+	plugins plugins.Plugins
 }
 
-func New(temporalClient client.Client) Workflow {
+func New(temporalClient client.Client, plugins plugins.Plugins) Workflow {
 	return Workflow{
 		temporalClient: temporalClient,
+		plugins:        plugins,
 	}
 }
 

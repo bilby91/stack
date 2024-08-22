@@ -5,17 +5,25 @@ import (
 	"os"
 
 	"github.com/formancehq/payments/internal/connectors/grpc/proto/services"
-	"github.com/formancehq/payments/internal/models"
 	"github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
 )
+
+type PSP interface {
+	Install(ctx context.Context, in *services.InstallRequest) (*services.InstallResponse, error)
+	FetchNextOthers(ctx context.Context, in *services.FetchNextOthersRequest) (*services.FetchNextOthersResponse, error)
+	FetchNextPayments(ctx context.Context, in *services.FetchNextPaymentsRequest) (*services.FetchNextPaymentsResponse, error)
+	FetchNextAccounts(ctx context.Context, in *services.FetchNextAccountsRequest) (*services.FetchNextAccountsResponse, error)
+	FetchNextExternalAccounts(ctx context.Context, in *services.FetchNextExternalAccountsRequest) (*services.FetchNextExternalAccountsResponse, error)
+	CreateBankAccount(ctx context.Context, in *services.CreateBankAccountRequest) (*services.CreateBankAccountResponse, error)
+}
 
 type PSPGRPCPlugin struct {
 	// GRPCPlugin must still implement the Plugin interface
 	plugin.Plugin
 	// Concrete implementation, written in Go. This is only used for plugins
 	// that are written in Go.
-	Impl models.Plugin
+	Impl PSP
 }
 
 func (p *PSPGRPCPlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {

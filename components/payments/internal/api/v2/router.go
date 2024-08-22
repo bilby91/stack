@@ -71,9 +71,9 @@ func newRouter(backend backend.Backend, a auth.Auth) *chi.Mux {
 		r.Route("/connectors", func(r chi.Router) {
 			r.Get("/", connectorsList(backend))
 			r.Get("/configs", connectorsConfigs(backend))
-			r.Post("/", connectorsInstall(backend))
 
 			r.Route("/{connector}", func(r chi.Router) {
+				r.Post("/", connectorsInstall(backend))
 				connectorsRouter(backend, r)
 			})
 		})
@@ -87,9 +87,9 @@ func connectorsRouter(backend backend.Backend, r chi.Router) {
 		r.Delete("/", connectorsUninstall(backend))
 		r.Get("/config", connectorsConfig(backend))
 		r.Post("/reset", connectorsReset(backend))
+		r.Get("/tasks", tasksList(backend))
+		r.Get("/tasks/{taskID}", tasksGet(backend))
 		// TODO(polo): add update config handler
-		// TODO(polo): add get tasks handler
-		// TODO(polo): add get task handler
 	})
 }
 
@@ -115,4 +115,8 @@ func poolID(r *http.Request) string {
 
 func bankAccountID(r *http.Request) string {
 	return chi.URLParam(r, "bankAccountID")
+}
+
+func taskID(r *http.Request) string {
+	return chi.URLParam(r, "taskID")
 }

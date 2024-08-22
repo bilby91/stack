@@ -7,21 +7,34 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func (a Activities) PluginCreateBankAccount(ctx context.Context, plugin models.Plugin, request models.CreateBankAccountRequest) (models.CreateBankAccountResponse, error) {
-	resp, err := plugin.CreateBankAccount(ctx, request)
+type CreateBankAccountRequest struct {
+	ConnectorID models.ConnectorID
+	Req         models.CreateBankAccountRequest
+}
+
+func (a Activities) PluginCreateBankAccount(ctx context.Context, request CreateBankAccountRequest) (*models.CreateBankAccountResponse, error) {
+	plugin, err := a.plugins.Get(request.ConnectorID)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := plugin.CreateBankAccount(ctx, request.Req)
 	if err != nil {
 		// TODO(polo): temporal errors
-		return models.CreateBankAccountResponse{}, err
+		return nil, err
 	}
-	return resp, nil
+	return &resp, nil
 }
 
 var PluginCreateBankAccountActivity = Activities{}.PluginCreateBankAccount
 
-func PluginCreateBankAccount(ctx workflow.Context, plugin models.Plugin, request models.CreateBankAccountRequest) (models.CreateBankAccountResponse, error) {
+func PluginCreateBankAccount(ctx workflow.Context, connectorID models.ConnectorID, request models.CreateBankAccountRequest) (*models.CreateBankAccountResponse, error) {
 	ret := models.CreateBankAccountResponse{}
-	if err := executeActivity(ctx, PluginCreateBankAccountActivity, ret, plugin, request); err != nil {
-		return models.CreateBankAccountResponse{}, err
+	if err := executeActivity(ctx, PluginCreateBankAccountActivity, &ret, CreateBankAccountRequest{
+		ConnectorID: connectorID,
+		Req:         request,
+	}); err != nil {
+		return nil, err
 	}
-	return ret, nil
+	return &ret, nil
 }

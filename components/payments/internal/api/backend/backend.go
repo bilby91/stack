@@ -14,14 +14,6 @@ import (
 
 //go:generate mockgen -source backend.go -destination backend_generated.go -package backend . Backend
 type Backend interface {
-	// Connectors
-	ConnectorsConfigs() plugins.Configs
-	ConnectorsConfig(ctx context.Context, connectorID models.ConnectorID) (json.RawMessage, error)
-	ConnectorsList(ctx context.Context, query storage.ListConnectorsQuery) (*bunpaginate.Cursor[models.Connector], error)
-	ConnectorsInstall(ctx context.Context, provider string, config json.RawMessage) (models.ConnectorID, error)
-	ConnectorsUninstall(ctx context.Context, connectorID models.ConnectorID) error
-	ConnectorsReset(ctx context.Context, connectorID models.ConnectorID) error
-
 	// Accounts
 	AccountsList(ctx context.Context, query storage.ListAccountsQuery) (*bunpaginate.Cursor[models.Account], error)
 	AccountsGet(ctx context.Context, id models.AccountID) (*models.Account, error)
@@ -37,6 +29,14 @@ type Backend interface {
 	BankAccountsCreate(ctx context.Context, bankAccount models.BankAccount) error
 	BankAccountsGet(ctx context.Context, id uuid.UUID) (*models.BankAccount, error)
 
+	// Connectors
+	ConnectorsConfigs() plugins.Configs
+	ConnectorsConfig(ctx context.Context, connectorID models.ConnectorID) (json.RawMessage, error)
+	ConnectorsList(ctx context.Context, query storage.ListConnectorsQuery) (*bunpaginate.Cursor[models.Connector], error)
+	ConnectorsInstall(ctx context.Context, provider string, config json.RawMessage) (models.ConnectorID, error)
+	ConnectorsUninstall(ctx context.Context, connectorID models.ConnectorID) error
+	ConnectorsReset(ctx context.Context, connectorID models.ConnectorID) error
+
 	// Payments
 	PaymentsUpdateMetadata(ctx context.Context, id models.PaymentID, metadata map[string]string) error
 	PaymentsList(ctx context.Context, query storage.ListPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error)
@@ -49,4 +49,11 @@ type Backend interface {
 	PoolsDelete(ctx context.Context, id uuid.UUID) error
 	PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID models.AccountID) error
 	PoolsRemoveAccount(ctx context.Context, id uuid.UUID, accountID models.AccountID) error
+
+	// Schedules
+	SchedulesList(ctx context.Context, query storage.ListSchedulesQuery) (*bunpaginate.Cursor[models.Schedule], error)
+	SchedulesGet(ctx context.Context, id string, connectorID models.ConnectorID) (*models.Schedule, error)
+
+	// Workflows Instances
+	WorkflowsInstancesList(ctx context.Context, query storage.ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error)
 }

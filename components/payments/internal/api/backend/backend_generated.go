@@ -8,6 +8,7 @@ import (
 	context "context"
 	json "encoding/json"
 	reflect "reflect"
+	time "time"
 
 	plugins "github.com/formancehq/payments/internal/connectors/plugins"
 	models "github.com/formancehq/payments/internal/models"
@@ -303,6 +304,21 @@ func (mr *MockBackendMockRecorder) PoolsAddAccount(ctx, id, accountID interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PoolsAddAccount", reflect.TypeOf((*MockBackend)(nil).PoolsAddAccount), ctx, id, accountID)
 }
 
+// PoolsBalancesAt mocks base method.
+func (m *MockBackend) PoolsBalancesAt(ctx context.Context, poolID uuid.UUID, at time.Time) ([]models.AggregatedBalance, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PoolsBalancesAt", ctx, poolID, at)
+	ret0, _ := ret[0].([]models.AggregatedBalance)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PoolsBalancesAt indicates an expected call of PoolsBalancesAt.
+func (mr *MockBackendMockRecorder) PoolsBalancesAt(ctx, poolID, at interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PoolsBalancesAt", reflect.TypeOf((*MockBackend)(nil).PoolsBalancesAt), ctx, poolID, at)
+}
+
 // PoolsCreate mocks base method.
 func (m *MockBackend) PoolsCreate(ctx context.Context, pool models.Pool) error {
 	m.ctrl.T.Helper()
@@ -373,4 +389,49 @@ func (m *MockBackend) PoolsRemoveAccount(ctx context.Context, id uuid.UUID, acco
 func (mr *MockBackendMockRecorder) PoolsRemoveAccount(ctx, id, accountID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PoolsRemoveAccount", reflect.TypeOf((*MockBackend)(nil).PoolsRemoveAccount), ctx, id, accountID)
+}
+
+// SchedulesGet mocks base method.
+func (m *MockBackend) SchedulesGet(ctx context.Context, id string, connectorID models.ConnectorID) (*models.Schedule, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SchedulesGet", ctx, id, connectorID)
+	ret0, _ := ret[0].(*models.Schedule)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SchedulesGet indicates an expected call of SchedulesGet.
+func (mr *MockBackendMockRecorder) SchedulesGet(ctx, id, connectorID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SchedulesGet", reflect.TypeOf((*MockBackend)(nil).SchedulesGet), ctx, id, connectorID)
+}
+
+// SchedulesList mocks base method.
+func (m *MockBackend) SchedulesList(ctx context.Context, query storage.ListSchedulesQuery) (*bunpaginate.Cursor[models.Schedule], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SchedulesList", ctx, query)
+	ret0, _ := ret[0].(*bunpaginate.Cursor[models.Schedule])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SchedulesList indicates an expected call of SchedulesList.
+func (mr *MockBackendMockRecorder) SchedulesList(ctx, query interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SchedulesList", reflect.TypeOf((*MockBackend)(nil).SchedulesList), ctx, query)
+}
+
+// WorkflowsInstancesList mocks base method.
+func (m *MockBackend) WorkflowsInstancesList(ctx context.Context, query storage.ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WorkflowsInstancesList", ctx, query)
+	ret0, _ := ret[0].(*bunpaginate.Cursor[models.Instance])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// WorkflowsInstancesList indicates an expected call of WorkflowsInstancesList.
+func (mr *MockBackendMockRecorder) WorkflowsInstancesList(ctx, query interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WorkflowsInstancesList", reflect.TypeOf((*MockBackend)(nil).WorkflowsInstancesList), ctx, query)
 }

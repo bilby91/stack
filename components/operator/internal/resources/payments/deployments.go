@@ -10,6 +10,7 @@ import (
 	"github.com/formancehq/operator/internal/resources/registries"
 	"github.com/formancehq/operator/internal/resources/resourcereferences"
 	"github.com/formancehq/operator/internal/resources/settings"
+	"github.com/formancehq/stack/libs/go-libs/pointer"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -114,13 +115,14 @@ func commonEnvVars(ctx core.Context, stack *v1beta1.Stack, payments *v1beta1.Pay
 		core.Env("POSTGRES_DATABASE_NAME", "$(POSTGRES_DATABASE)"),
 		core.Env("CONFIG_ENCRYPTION_KEY", encryptionKey),
 		core.Env("PLUGIN_DIRECTORY_PATH", "/plugins"),
+		core.Env("PLUGIN_MAGIC_COOKIE", "magic-value"), // TODO(polo): change value
 	)
 
 	return env, nil
 }
 
 func createFullDeployment(ctx core.Context, stack *v1beta1.Stack,
-	payments *v1beta1.Payments, database *v1beta1.Database, image string, hasTemporal bool) error {
+	payments *v1beta1.Payments, database *v1beta1.Database, image string, v3 bool) error {
 
 	env, err := commonEnvVars(ctx, stack, payments, database)
 	if err != nil {
@@ -158,7 +160,7 @@ func createFullDeployment(ctx core.Context, stack *v1beta1.Stack,
 		env = append(env, brokers.GetPublisherEnvVars(stack, broker, "payments", "")...)
 	}
 
-	if hasTemporal {
+	if v3 {
 		temporalEnvVars, err := temporalEnvVars(ctx, stack, payments)
 		if err != nil {
 			return err
@@ -170,6 +172,11 @@ func createFullDeployment(ctx core.Context, stack *v1beta1.Stack,
 	serviceAccountName, err := settings.GetAWSServiceAccount(ctx, stack.Name)
 	if err != nil {
 		return err
+	}
+
+	appOpts := applications.WithProbePath("/_health")
+	if v3 {
+		appOpts = applications.WithProbePath("/_healthcheck")
 	}
 
 	err = applications.
@@ -186,8 +193,12 @@ func createFullDeployment(ctx core.Context, stack *v1beta1.Stack,
 							Args:          []string{"serve"},
 							Env:           env,
 							Image:         image,
-							LivenessProbe: applications.DefaultLiveness("http", applications.WithProbePath("/_health")),
+							LivenessProbe: applications.DefaultLiveness("http", appOpts),
 							Ports:         []v1.ContainerPort{applications.StandardHTTPPort()},
+							// TODO(polo): only for v3
+							SecurityContext: &v1.SecurityContext{
+								ReadOnlyRootFilesystem: pointer.For(false),
+							},
 						}},
 						// Ensure empty
 						InitContainers: []v1.Container{},

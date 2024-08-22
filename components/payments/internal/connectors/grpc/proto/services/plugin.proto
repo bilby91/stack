@@ -3,7 +3,9 @@ package formance.payments.grpc.services;
 option go_package = "github.com/formancehq/payments/internal/connectors/grpc/proto/services";
 
 import "account.proto";
+import "bank_account.proto";
 import "capability.proto";
+import "other.proto";
 import "payment.proto";
 import "workflow.proto";
 
@@ -20,9 +22,10 @@ message FetchNextOthersRequest {
     string name = 1;
     bytes from_payload = 2;
     bytes state = 3;
+    int64 page_size = 4;
 }
 message FetchNextOthersResponse {
-    repeated bytes payload = 1;
+    repeated formance.payments.connectors.grpc.proto.Other others = 1;
     bytes new_state = 2;
     bool has_more = 3;
 }
@@ -30,6 +33,7 @@ message FetchNextOthersResponse {
 message FetchNextPaymentsRequest {
     bytes from_payload = 1;
     bytes state = 2;
+    int64 page_size = 3;
 }
 message FetchNextPaymentsResponse {
     repeated formance.payments.connectors.grpc.proto.Payment payments = 1;
@@ -40,6 +44,7 @@ message FetchNextPaymentsResponse {
 message FetchNextAccountsRequest {
     bytes from_payload = 1;
     bytes state = 2;
+    int64 page_size = 3;
 }
 message FetchNextAccountsResponse {
     repeated formance.payments.connectors.grpc.proto.Account accounts = 1;
@@ -50,12 +55,21 @@ message FetchNextAccountsResponse {
 message FetchNextExternalAccountsRequest {
     bytes from_payload = 1;
     bytes state = 2;
+    int64 page_size = 3;
 }
 
 message FetchNextExternalAccountsResponse {
     repeated formance.payments.connectors.grpc.proto.Account accounts = 1;
     bytes new_state = 2;
     bool has_more = 3;
+}
+
+message CreateBankAccountRequest {
+    formance.payments.connectors.grpc.proto.BankAccount bank_account = 1;
+}
+
+message CreateBankAccountResponse {
+    formance.payments.connectors.grpc.proto.Account related_account = 1;
 }
 
 service Plugin {
@@ -65,4 +79,5 @@ service Plugin {
     rpc FetchNextPayments(FetchNextPaymentsRequest) returns (FetchNextPaymentsResponse) {}
     rpc FetchNextAccounts(FetchNextAccountsRequest) returns (FetchNextAccountsResponse) {}
     rpc FetchNextExternalAccounts(FetchNextExternalAccountsRequest) returns (FetchNextExternalAccountsResponse) {}
+    rpc CreateBankAccount(CreateBankAccountRequest) returns (CreateBankAccountResponse) {}
 }

@@ -15,7 +15,7 @@ var (
 )
 
 type Plugins interface {
-	RegisterPlugin(connectorID models.ConnectorID) (models.Plugin, error)
+	RegisterPlugin(connectorID models.ConnectorID) error
 	UnregisterPlugin(connectorID models.ConnectorID) error
 	Get(connectorID models.ConnectorID) (models.Plugin, error)
 }
@@ -29,10 +29,7 @@ type plugins struct {
 }
 
 type pluginInformation struct {
-	plugin models.Plugin
-
 	client *plugin.Client
-	conn   plugin.ClientProtocol
 }
 
 func New(pluginsPath map[string]string) *plugins {
@@ -42,19 +39,19 @@ func New(pluginsPath map[string]string) *plugins {
 	}
 }
 
-func (p *plugins) RegisterPlugin(connectorID models.ConnectorID) (models.Plugin, error) {
+func (p *plugins) RegisterPlugin(connectorID models.ConnectorID) error {
 	p.rwMutex.Lock()
 	defer p.rwMutex.Unlock()
 
 	// Check if plugin is already installed
-	pluginInfo, ok := p.plugins[connectorID.String()]
+	_, ok := p.plugins[connectorID.String()]
 	if ok {
-		return pluginInfo.plugin, nil
+		return nil
 	}
 
 	pluginPath, ok := p.pluginsPath[connectorID.Provider]
 	if !ok {
-		return nil, errors.Wrap(ErrNotFound, "plugin path not found")
+		return errors.Wrap(ErrNotFound, "plugin path not found")
 	}
 
 	pc := plugin.NewClient(&plugin.ClientConfig{
@@ -64,29 +61,11 @@ func (p *plugins) RegisterPlugin(connectorID models.ConnectorID) (models.Plugin,
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
 	})
 
-	// Connect via RPC
-	conn, err := pc.Client()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to connect to plugin")
-	}
-
-	raw, err := conn.Dispense("psp")
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to dispense plugin")
-	}
-
-	plugin, ok := raw.(models.Plugin)
-	if !ok {
-		return nil, errors.New("failed to cast plugin")
-	}
-
 	p.plugins[connectorID.String()] = pluginInformation{
-		plugin: plugin,
 		client: pc,
-		conn:   conn,
 	}
 
-	return plugin, nil
+	return nil
 }
 
 func (p *plugins) UnregisterPlugin(connectorID models.ConnectorID) error {
@@ -101,7 +80,6 @@ func (p *plugins) UnregisterPlugin(connectorID models.ConnectorID) error {
 
 	// Close the connection
 	pluginInfo.client.Kill()
-	pluginInfo.conn.Close()
 
 	delete(p.plugins, connectorID.String())
 
@@ -117,7 +95,31 @@ func (p *plugins) Get(connectorID models.ConnectorID) (models.Plugin, error) {
 		return nil, errors.New("plugin not found")
 	}
 
-	return pluginInfo.plugin, nil
+	return getPlugin(pluginInfo.client)
+}
+
+func getPlugin(client *plugin.Client) (models.Plugin, error) {
+	// Connect via RPC
+	conn, err := client.Client()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to connect to plugin")
+	}
+
+	raw, err := conn.Dispense("psp")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to dispense plugin")
+	}
+
+	plugin, ok := raw.(grpc.PSP)
+	if !ok {
+		return nil, errors.New("failed to cast plugin")
+	}
+
+	impl := &impl{
+		pluginClient: plugin,
+	}
+
+	return impl, nil
 }
 
 var _ Plugins = &plugins{}

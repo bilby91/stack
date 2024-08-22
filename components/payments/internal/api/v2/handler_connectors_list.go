@@ -42,8 +42,8 @@ func connectorsList(backend backend.Backend) http.HandlerFunc {
 		for i := range connectors.Data {
 			data[i] = &connectorsListElement{
 				Provider:    connectors.Data[i].Provider,
-				ConnectorID: data[i].ConnectorID,
-				Name:        data[i].Name,
+				ConnectorID: connectors.Data[i].ID.String(),
+				Name:        connectors.Data[i].Name,
 				Enabled:     true,
 			}
 		}

@@ -54,10 +54,3 @@ func (a *BankAccount) Offuscate() error {
 
 	return nil
 }
-
-type BankAccountRelatedAccount struct {
-	BankAccountID uuid.UUID   `json:"bankAccountID"`
-	AccountID     AccountID   `json:"accountID"`
-	ConnectorID   ConnectorID `json:"connectorID"`
-	CreatedAt     time.Time   `json:"createdAt"`
-}

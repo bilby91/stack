@@ -3,10 +3,13 @@ package engine
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/engine/plugins"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/storage"
+	"github.com/formancehq/stack/libs/go-libs/bun/bunpaginate"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.temporal.io/api/enums/v1"
@@ -17,6 +20,8 @@ type Engine interface {
 	InstallConnector(ctx context.Context, provider string, rawConfig json.RawMessage) (models.ConnectorID, error)
 	UninstallConnector(ctx context.Context, connectorID models.ConnectorID) error
 	CreateBankAccount(ctx context.Context, bankAccountID uuid.UUID, connectorID models.ConnectorID) (*models.BankAccount, error)
+
+	OnStart(ctx context.Context) error
 }
 
 type engine struct {
@@ -24,12 +29,15 @@ type engine struct {
 
 	workers *Workers
 	plugins plugins.Plugins
+	storage storage.Storage
 }
 
-func New(workers *Workers, plugins plugins.Plugins) Engine {
+func New(temporalClient client.Client, workers *Workers, plugins plugins.Plugins, storage storage.Storage) Engine {
 	return &engine{
-		workers: workers,
-		plugins: plugins,
+		temporalClient: temporalClient,
+		workers:        workers,
+		plugins:        plugins,
+		storage:        storage,
 	}
 }
 
@@ -48,7 +56,7 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 		Provider:  provider,
 	}
 
-	plugin, err := e.plugins.RegisterPlugin(connectorID)
+	err := e.plugins.RegisterPlugin(connectorID)
 	if err != nil {
 		return models.ConnectorID{}, handlePluginError(err)
 	}
@@ -62,12 +70,12 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 	run, err := e.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
+			ID:                                       fmt.Sprintf("install-%s", connectorID.String()),
 			TaskQueue:                                connectorID.Reference,
-			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 		},
 		workflow.RunInstallConnector,
-		plugin,
 		workflow.InstallConnector{
 			ConnectorID: connectorID,
 			RawConfig:   rawConfig,
@@ -89,8 +97,9 @@ func (e *engine) UninstallConnector(ctx context.Context, connectorID models.Conn
 	run, err := e.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
+			ID:                                       fmt.Sprintf("uninstall-%s", connectorID.String()),
 			TaskQueue:                                connectorID.Reference,
-			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 		},
 		workflow.RunUninstallConnector,
@@ -119,20 +128,15 @@ func (e *engine) UninstallConnector(ctx context.Context, connectorID models.Conn
 }
 
 func (e *engine) CreateBankAccount(ctx context.Context, bankAccountID uuid.UUID, connectorID models.ConnectorID) (*models.BankAccount, error) {
-	plugin, err := e.plugins.Get(connectorID)
-	if err != nil {
-		return nil, handlePluginError(err)
-	}
-
 	run, err := e.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
+			ID:                                       fmt.Sprintf("create-bank-account-%s-%s", connectorID.String(), bankAccountID.String()),
 			TaskQueue:                                connectorID.Reference,
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 		},
 		workflow.RunCreateBankAccount,
-		plugin,
 		workflow.CreateBankAccount{
 			ConnectorID:   connectorID,
 			BankAccountID: bankAccountID,
@@ -149,6 +153,69 @@ func (e *engine) CreateBankAccount(ctx context.Context, bankAccountID uuid.UUID,
 	}
 
 	return &bankAccount, nil
+}
+
+func (e *engine) OnStart(ctx context.Context) error {
+	query := storage.NewListConnectorsQuery(
+		bunpaginate.NewPaginatedQueryOptions(storage.ConnectorQuery{}).
+			WithPageSize(100),
+	)
+
+	for {
+		connectors, err := e.storage.ConnectorsList(ctx, query)
+		if err != nil {
+			return err
+		}
+
+		for _, connector := range connectors.Data {
+			if err := e.onStartPlugin(ctx, connector); err != nil {
+				return err
+			}
+		}
+
+		if !connectors.HasMore {
+			break
+		}
+
+		err = bunpaginate.UnmarshalCursor(connectors.Next, &query)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) error {
+	err := e.plugins.RegisterPlugin(connector.ID)
+	if err != nil {
+		return err
+	}
+
+	err = e.workers.AddWorker(connector.ID)
+	if err != nil {
+		return err
+	}
+
+	// Launch the workflow
+	_, err = e.temporalClient.ExecuteWorkflow(
+		ctx,
+		client.StartWorkflowOptions{
+			ID:                                       fmt.Sprintf("install-%s", connector.ID.String()),
+			TaskQueue:                                connector.ID.Reference,
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
+			WorkflowExecutionErrorWhenAlreadyStarted: false,
+		},
+		workflow.RunInstallConnector,
+		workflow.InstallConnector{
+			ConnectorID: connector.ID,
+			RawConfig:   connector.Config,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 var _ Engine = &engine{}

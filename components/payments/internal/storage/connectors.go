@@ -46,6 +46,7 @@ func (s *store) ConnectorsInstall(ctx context.Context, c models.Connector) error
 
 	_, err = tx.NewInsert().
 		Model(&toInsert).
+		On("CONFLICT (id) DO NOTHING").
 		Exec(ctx)
 	if err != nil {
 		return e("failed to insert connector", err)

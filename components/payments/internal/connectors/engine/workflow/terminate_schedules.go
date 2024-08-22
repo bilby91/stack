@@ -23,7 +23,7 @@ func (w Workflow) runTerminateSchedules(
 		bunpaginate.NewPaginatedQueryOptions(storage.ScheduleQuery{}).
 			WithPageSize(100).
 			WithQueryBuilder(
-				query.Match("connector_id", terminateSchedules.ConnectorID),
+				query.Match("connector_id", terminateSchedules.ConnectorID.String()),
 			),
 	)
 	for {
@@ -32,13 +32,25 @@ func (w Workflow) runTerminateSchedules(
 			return err
 		}
 
+		wg := workflow.NewWaitGroup(ctx)
+
 		for _, schedule := range schedules.Data {
-			// TODO(polo): context.Background() ?
-			scheduleHandler := w.temporalClient.ScheduleClient().GetHandle(context.Background(), schedule.ID)
-			if err := scheduleHandler.Delete(context.Background()); err != nil {
-				// TODO(polo): log error but continue
-			}
+			s := schedule
+			wg.Add(1)
+			workflow.Go(ctx, func(ctx workflow.Context) {
+				defer wg.Done()
+				// TODO(polo): context.Background() ?
+				scheduleHandler := w.temporalClient.ScheduleClient().GetHandle(context.Background(), s.ID)
+				if err := scheduleHandler.Delete(context.Background()); err != nil {
+					// TODO(polo): log error but continue
+					_ = err
+				}
+			})
+
+			// TODO(polo): delete workflow execution ?
 		}
+
+		wg.Wait(ctx)
 
 		if !schedules.HasMore {
 			break

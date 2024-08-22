@@ -29,3 +29,9 @@ func (c *GRPCClient) FetchNextExternalAccounts(ctx context.Context, req *service
 func (c *GRPCClient) FetchNextOthers(ctx context.Context, req *services.FetchNextOthersRequest) (*services.FetchNextOthersResponse, error) {
 	return c.client.FetchNextOthers(ctx, req)
 }
+
+func (c *GRPCClient) CreateBankAccount(ctx context.Context, req *services.CreateBankAccountRequest) (*services.CreateBankAccountResponse, error) {
+	return c.client.CreateBankAccount(ctx, req)
+}
+
+var _ PSP = &GRPCClient{}

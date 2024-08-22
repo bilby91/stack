@@ -29,7 +29,7 @@ type Parameter struct {
 
 var (
 	defaultParameters = map[string]Parameter{
-		"pollingDuration": {
+		"pollingPeriod": {
 			DataType:     "duration ns",
 			Required:     false,
 			DefaultValue: "2m",

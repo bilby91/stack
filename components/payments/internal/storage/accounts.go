@@ -21,7 +21,7 @@ type account struct {
 	ConnectorID models.ConnectorID `bun:"connector_id,type:character varying,notnull"`
 	CreatedAt   time.Time          `bun:"created_at,type:timestamp without time zone,notnull"`
 	Reference   string             `bun:"reference,type:text,notnull"`
-	Type        string             `bun:"account_type,type:text,notnull"`
+	Type        string             `bun:"type,type:text,notnull"`
 	Raw         json.RawMessage    `bun:"raw,type:json,notnull"`
 
 	// Optional fields

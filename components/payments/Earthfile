@@ -22,10 +22,10 @@ compile-plugins:
     COPY (+sources/*) /src
     WORKDIR /src/components/payments/internal/connectors/plugins/public
     FOR c IN $(ls -d */ | sed 's#/##')
-        WORKDIR /src/components/payments/internal/connectors/plugins/public/$c
+        WORKDIR /src/components/payments/internal/connectors/plugins/public/$c/cmd
         DO --pass-args core+GO_COMPILE --VERSION=$VERSION
         WORKDIR /src
-        SAVE ARTIFACT /src/components/payments/internal/connectors/plugins/public/$c/main ./plugins/$c
+        SAVE ARTIFACT /src/components/payments/internal/connectors/plugins/public/$c/cmd/main ./plugins/$c
     END
 
 compile:
@@ -41,6 +41,9 @@ build-image:
     CMD ["serve"]
     COPY (+compile/main) /bin/payments
     COPY (+compile-plugins/plugins) /plugins
+    FOR c IN $(ls /plugins/*)
+        RUN chmod +x $c
+    END
     ARG REPOSITORY=ghcr.io
     ARG tag=latest
     DO core+SAVE_IMAGE --COMPONENT=payments --REPOSITORY=${REPOSITORY} --TAG=$tag

@@ -27,7 +27,7 @@ func (p Plugin) fetchNextRecipients(ctx context.Context, req models.FetchNextExt
 		}
 	}
 
-	var from models.Account
+	var from models.PSPAccount
 	if req.FromPayload == nil {
 		return models.FetchNextExternalAccountsResponse{}, errors.New("missing from payload when fetching payments")
 	}

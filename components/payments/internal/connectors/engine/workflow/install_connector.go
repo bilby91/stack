@@ -2,11 +2,13 @@ package workflow
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
 	"go.temporal.io/api/enums/v1"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -17,7 +19,6 @@ type InstallConnector struct {
 
 func (w Workflow) runInstallConnector(
 	ctx workflow.Context,
-	plugin models.Plugin,
 	installConnector InstallConnector,
 ) error {
 	// First step: store the connector inside the database
@@ -35,7 +36,11 @@ func (w Workflow) runInstallConnector(
 
 	// Second step: install the connector via the plugin and get the list of
 	// capabilities and the workflow of polling data
-	installResponse, err := activities.PluginInstallConnector(infiniteRetryContext(ctx), plugin, installConnector.RawConfig)
+	installResponse, err := activities.PluginInstallConnector(
+		infiniteRetryContext(ctx),
+		installConnector.ConnectorID,
+		installConnector.RawConfig,
+	)
 	if err != nil {
 		return errors.Wrap(err, "failed to install connector")
 	}
@@ -58,18 +63,26 @@ func (w Workflow) runInstallConnector(
 		workflow.WithChildOptions(
 			ctx,
 			workflow.ChildWorkflowOptions{
-				TaskQueue:         installConnector.ConnectorID.Reference,
-				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+				WorkflowID:            fmt.Sprintf("run-tasks-%s", installConnector.ConnectorID.String()),
+				WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
+				TaskQueue:             installConnector.ConnectorID.Reference,
+				ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
 			},
 		),
 		Run,
-		plugin,
 		config,
 		installConnector.ConnectorID,
 		nil,
 		[]models.TaskTree(installResponse.Workflow),
 	).Get(ctx, nil); err != nil {
-		return errors.Wrap(err, "running next workflow")
+		applicationError := &temporal.ApplicationError{}
+		if errors.As(err, &applicationError) {
+			if applicationError.Type() != "ChildWorkflowExecutionAlreadyStartedError" {
+				return err
+			}
+		} else {
+			return errors.Wrap(err, "running next workflow")
+		}
 	}
 
 	return nil

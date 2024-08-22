@@ -12,6 +12,8 @@ import (
 
 type Activities struct {
 	storage storage.Storage
+
+	plugins plugins.Plugins
 }
 
 func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
@@ -109,14 +111,6 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.StorageInstancesDelete,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StorageWorkflowsStore",
-			Func: a.StorageWorkflowsStore,
-		}).
-		Append(temporalworker.Definition{
-			Name: "StorageWorkflowsDelete",
-			Func: a.StorageWorkflowsDelete,
-		}).
-		Append(temporalworker.Definition{
 			Name: "StorageBankAccountsDeleteRelatedAccounts",
 			Func: a.StorageBankAccountsDeleteRelatedAccounts,
 		}).
@@ -141,6 +135,7 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 func New(storage storage.Storage, plugins plugins.Plugins) Activities {
 	return Activities{
 		storage: storage,
+		plugins: plugins,
 	}
 }
 

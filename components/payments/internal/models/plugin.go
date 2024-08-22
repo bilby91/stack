@@ -69,7 +69,7 @@ type FetchNextOthersRequest struct {
 }
 
 type FetchNextOthersResponse struct {
-	Others   []json.RawMessage
+	Others   []PSPOther
 	NewState json.RawMessage
 	HasMore  bool
 }
@@ -86,5 +86,5 @@ type CreateBankAccountRequest struct {
 }
 
 type CreateBankAccountResponse struct {
-	RelatedAccount Account
+	RelatedAccount PSPAccount
 }

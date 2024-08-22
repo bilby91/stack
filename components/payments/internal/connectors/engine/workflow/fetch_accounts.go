@@ -2,6 +2,7 @@ package workflow
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
@@ -13,30 +14,46 @@ import (
 type FetchNextAccounts struct {
 	Config      models.Config      `json:"config"`
 	ConnectorID models.ConnectorID `json:"connectorID"`
-	FromPayload json.RawMessage    `json:"fromPayload"`
+	FromPayload *FromPayload       `json:"fromPayload"`
 }
 
 func (w Workflow) runFetchNextAccounts(
 	ctx workflow.Context,
-	plugin models.Plugin,
 	fetchNextAccount FetchNextAccounts,
 	nextTasks []models.TaskTree,
 ) error {
+	if err := w.createInstance(ctx, fetchNextAccount.ConnectorID); err != nil {
+		return errors.Wrap(err, "creating instance")
+	}
+	err := w.fetchAccounts(ctx, fetchNextAccount, nextTasks)
+	return w.terminateInstance(ctx, fetchNextAccount.ConnectorID, err)
+}
+
+func (w Workflow) fetchAccounts(
+	ctx workflow.Context,
+	fetchNextAccount FetchNextAccounts,
+	nextTasks []models.TaskTree,
+) error {
+	stateReference := fmt.Sprintf("%s", models.CAPABILITY_FETCH_ACCOUNTS.String())
+	if fetchNextAccount.FromPayload != nil {
+		stateReference = fmt.Sprintf("%s-%s", models.CAPABILITY_FETCH_ACCOUNTS.String(), fetchNextAccount.FromPayload.ID)
+	}
+
 	stateID := models.StateID{
-		Reference:   workflow.GetInfo(ctx).WorkflowExecution.ID,
+		Reference:   stateReference,
 		ConnectorID: fetchNextAccount.ConnectorID,
 	}
 	state, err := activities.StorageStatesGet(infiniteRetryContext(ctx), stateID)
 	if err != nil {
-		return errors.Wrapf(err, "retrieving state: %s", stateID.String)
+		return fmt.Errorf("retrieving state %s: %v", stateID.String(), err)
 	}
 
 	hasMore := true
 	for hasMore {
 		accountsResponse, err := activities.PluginFetchNextAccounts(
 			infiniteRetryContext(ctx),
-			plugin,
-			fetchNextAccount.FromPayload,
+			fetchNextAccount.ConnectorID,
+			fetchNextAccount.FromPayload.GetPayload(),
 			state.State,
 			fetchNextAccount.Config.PageSize,
 		)
@@ -44,22 +61,24 @@ func (w Workflow) runFetchNextAccounts(
 			return errors.Wrap(err, "fetching next accounts")
 		}
 
-		err = activities.StorageAccountsStore(
-			infiniteRetryContext(ctx),
-			models.FromPSPAccounts(
-				accountsResponse.Accounts,
-				models.ACCOUNT_TYPE_INTERNAL,
-				fetchNextAccount.ConnectorID,
-			),
-		)
-		if err != nil {
-			return errors.Wrap(err, "storing next accounts")
+		if len(accountsResponse.Accounts) > 0 {
+			err = activities.StorageAccountsStore(
+				infiniteRetryContext(ctx),
+				models.FromPSPAccounts(
+					accountsResponse.Accounts,
+					models.ACCOUNT_TYPE_INTERNAL,
+					fetchNextAccount.ConnectorID,
+				),
+			)
+			if err != nil {
+				return errors.Wrap(err, "storing next accounts")
+			}
 		}
 
 		state.State = accountsResponse.NewState
 		err = activities.StorageStatesStore(
 			infiniteRetryContext(ctx),
-			state,
+			*state,
 		)
 		if err != nil {
 			return errors.Wrap(err, "storing state")
@@ -82,10 +101,12 @@ func (w Workflow) runFetchNextAccounts(
 					},
 				),
 				Run,
-				plugin,
 				fetchNextAccount.Config,
 				fetchNextAccount.ConnectorID,
-				payload,
+				&FromPayload{
+					ID:      account.Reference,
+					Payload: payload,
+				},
 				nextTasks,
 			).Get(ctx, nil); err != nil {
 				return errors.Wrap(err, "running next workflow")

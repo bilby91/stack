@@ -73,7 +73,7 @@ func (c *Client) GetTransactions(ctx context.Context, accountID string, page, pa
 	endpoint := fmt.Sprintf("%s/accounts/%s/transactions/find", c.endpoint, accountID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create login request: %w", err)
+		return nil, fmt.Errorf("failed to create transactions request: %w", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")

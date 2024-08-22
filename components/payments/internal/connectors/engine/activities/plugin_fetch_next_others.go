@@ -8,27 +8,40 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func (a Activities) PluginFetchNextOthers(ctx context.Context, plugin models.Plugin, request models.FetchNextOthersRequest) (models.FetchNextOthersResponse, error) {
-	resp, err := plugin.FetchNextOthers(ctx, request)
+type FetchNextOthersRequest struct {
+	ConnectorID models.ConnectorID
+	Req         models.FetchNextOthersRequest
+}
+
+func (a Activities) PluginFetchNextOthers(ctx context.Context, request FetchNextOthersRequest) (*models.FetchNextOthersResponse, error) {
+	plugin, err := a.plugins.Get(request.ConnectorID)
 	if err != nil {
-		// TODO(polo): temporal errors
-		return models.FetchNextOthersResponse{}, err
+		return nil, err
 	}
 
-	return resp, nil
+	resp, err := plugin.FetchNextOthers(ctx, request.Req)
+	if err != nil {
+		// TODO(polo): temporal errors
+		return nil, err
+	}
+
+	return &resp, nil
 }
 
 var PluginFetchNextOthersActivity = Activities{}.PluginFetchNextOthers
 
-func PluginFetchNextOthers(ctx workflow.Context, plugin models.Plugin, name string, fromPayload, state json.RawMessage, pageSize int) (models.FetchNextOthersResponse, error) {
+func PluginFetchNextOthers(ctx workflow.Context, connectorID models.ConnectorID, name string, fromPayload, state json.RawMessage, pageSize int) (*models.FetchNextOthersResponse, error) {
 	ret := models.FetchNextOthersResponse{}
-	if err := executeActivity(ctx, PluginFetchNextOthersActivity, ret, plugin, models.FetchNextOthersRequest{
-		Name:        name,
-		FromPayload: fromPayload,
-		State:       state,
-		PageSize:    pageSize,
+	if err := executeActivity(ctx, PluginFetchNextOthersActivity, &ret, FetchNextOthersRequest{
+		ConnectorID: connectorID,
+		Req: models.FetchNextOthersRequest{
+			Name:        name,
+			FromPayload: fromPayload,
+			State:       state,
+			PageSize:    pageSize,
+		},
 	}); err != nil {
-		return models.FetchNextOthersResponse{}, err
+		return nil, err
 	}
-	return ret, nil
+	return &ret, nil
 }

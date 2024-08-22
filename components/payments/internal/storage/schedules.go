@@ -7,6 +7,7 @@ import (
 
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/stack/libs/go-libs/bun/bunpaginate"
+	"github.com/formancehq/stack/libs/go-libs/pointer"
 	"github.com/formancehq/stack/libs/go-libs/query"
 	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
@@ -26,7 +27,7 @@ func (s *store) SchedulesUpsert(ctx context.Context, schedule models.Schedule) e
 
 	_, err := s.db.NewInsert().
 		Model(&toInsert).
-		On("CONFLICT (id) DO NOTHING").
+		On("CONFLICT (id, connector_id) DO NOTHING").
 		Exec(ctx)
 
 	return e("failed to insert schedule", err)
@@ -39,6 +40,20 @@ func (s *store) SchedulesDeleteFromConnectorID(ctx context.Context, connectorID 
 		Exec(ctx)
 
 	return e("failed to delete schedule", err)
+}
+
+func (s *store) SchedulesGet(ctx context.Context, id string, connectorID models.ConnectorID) (*models.Schedule, error) {
+	var schedule schedule
+	err := s.db.NewSelect().
+		Model(&schedule).
+		Where("id = ? AND connector_id = ?", id, connectorID).
+		Scan(ctx)
+
+	if err != nil {
+		return nil, e("failed to fetch schedule", err)
+	}
+
+	return pointer.For(toScheduleModel(schedule)), nil
 }
 
 type ScheduleQuery struct{}

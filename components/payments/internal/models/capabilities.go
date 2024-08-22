@@ -19,6 +19,27 @@ const (
 	CAPABILITY_CREATION_PAYMENT
 )
 
+func (t Capability) String() string {
+	switch t {
+	case CAPABILITY_FETCH_ACCOUNTS:
+		return "FETCH_ACCOUNTS"
+	case CAPABILITY_FETCH_EXTERNAL_ACCOUNTS:
+		return "FETCH_EXTERNAL_ACCOUNTS"
+	case CAPABILITY_FETCH_PAYMENTS:
+		return "FETCH_PAYMENTS"
+	case CAPABILITY_FETCH_OTHERS:
+		return "FETCH_OTHERS"
+	case CAPABILITY_WEBHOOKS:
+		return "WEBHOOKS"
+	case CAPABILITY_CREATION_BANK_ACCOUNT:
+		return "CREATION_BANK_ACCOUNT"
+	case CAPABILITY_CREATION_PAYMENT:
+		return "CREATION_PAYMENT"
+	default:
+		return "UNKNOWN"
+	}
+}
+
 func (t Capability) Value() (driver.Value, error) {
 	switch t {
 	case CAPABILITY_FETCH_ACCOUNTS:

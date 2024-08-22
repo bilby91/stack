@@ -26,7 +26,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 		}
 	}
 
-	var from models.Account
+	var from models.PSPAccount
 	if req.FromPayload == nil {
 		return models.FetchNextPaymentsResponse{}, errors.New("missing from payload when fetching payments")
 	}
@@ -128,17 +128,15 @@ func transactionToPayments(transaction *client.Transaction) (*models.PSPPayment,
 	}
 
 	payment := models.PSPPayment{
-		Reference:                   transaction.ID,
-		CreatedAt:                   createdAt,
-		Type:                        paymentType,
-		Amount:                      amount,
-		Asset:                       currency.FormatAsset(supportedCurrenciesWithDecimal, transaction.Attributes.Currency),
-		Scheme:                      models.PAYMENT_SCHEME_OTHER,
-		Status:                      models.PAYMENT_STATUS_SUCCEEDED,
-		SourceAccountReference:      new(string),
-		DestinationAccountReference: new(string),
-		Metadata:                    map[string]string{},
-		Raw:                         rawData,
+		Reference: transaction.ID,
+		CreatedAt: createdAt,
+		Type:      paymentType,
+		Amount:    amount,
+		Asset:     currency.FormatAsset(supportedCurrenciesWithDecimal, transaction.Attributes.Currency),
+		Scheme:    models.PAYMENT_SCHEME_OTHER,
+		Status:    models.PAYMENT_STATUS_SUCCEEDED,
+		Metadata:  map[string]string{},
+		Raw:       rawData,
 	}
 
 	switch paymentType {

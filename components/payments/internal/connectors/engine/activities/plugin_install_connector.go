@@ -8,23 +8,37 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func (a Activities) PluginInstallConnector(ctx context.Context, plugin models.Plugin, request models.InstallRequest) (models.InstallResponse, error) {
-	resp, err := plugin.Install(ctx, request)
+type InstallConnectorRequest struct {
+	ConnectorID models.ConnectorID
+	Req         models.InstallRequest
+}
+
+func (a Activities) PluginInstallConnector(ctx context.Context, request InstallConnectorRequest) (*models.InstallResponse, error) {
+	plugin, err := a.plugins.Get(request.ConnectorID)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := plugin.Install(ctx, request.Req)
 	if err != nil {
 		// TODO(polo): temporal errors
-		return models.InstallResponse{}, err
+		return nil, err
 	}
-	return resp, err
+
+	return &resp, err
 }
 
 var PluginInstallConnectorActivity = Activities{}.PluginInstallConnector
 
-func PluginInstallConnector(ctx workflow.Context, plugin models.Plugin, config json.RawMessage) (models.InstallResponse, error) {
+func PluginInstallConnector(ctx workflow.Context, connectorID models.ConnectorID, config json.RawMessage) (*models.InstallResponse, error) {
 	ret := models.InstallResponse{}
-	if err := executeActivity(ctx, PluginInstallConnectorActivity, ret, plugin, models.InstallRequest{
-		Config: config,
+	if err := executeActivity(ctx, PluginInstallConnectorActivity, &ret, InstallConnectorRequest{
+		ConnectorID: connectorID,
+		Req: models.InstallRequest{
+			Config: config,
+		},
 	}); err != nil {
-		return models.InstallResponse{}, err
+		return nil, err
 	}
-	return ret, nil
+	return &ret, nil
 }

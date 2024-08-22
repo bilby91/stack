@@ -6,7 +6,7 @@ import (
 
 type Instance struct {
 	ID           string
-	WorkflowID   string
+	ScheduleID   string
 	ConnectorID  ConnectorID
 	CreatedAt    time.Time
 	UpdatedAt    time.Time

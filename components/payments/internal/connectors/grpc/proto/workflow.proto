@@ -6,11 +6,10 @@ message TaskTree {
     message FetchAccounts {}
     message FetchExternalAccounts {}
     message FetchPayments {}
-    message FetchOthers {
-        string name = 1;
-    }
+    message FetchOthers {}
 
-    repeated TaskTree next_tasks = 1;
+    string name = 1;
+    repeated TaskTree next_tasks = 2;
 
     oneof task {
         FetchAccounts fetch_accounts = 10;

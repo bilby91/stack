@@ -2,12 +2,10 @@ package workflow
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/google/uuid"
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/workflow"
@@ -15,16 +13,14 @@ import (
 
 func (w Workflow) run(
 	ctx workflow.Context,
-	plugin models.Plugin,
 	config models.Config,
 	connectorID models.ConnectorID,
-	fromPayload json.RawMessage,
+	fromPayload *FromPayload,
 	taskTree []models.TaskTree,
 ) error {
 	var nextWorkflow interface{}
 	var request interface{}
 	var capability models.Capability
-	metadata := make(map[string]string)
 	for _, task := range taskTree {
 		switch task.TaskType {
 		case models.TASK_FETCH_ACCOUNTS:
@@ -58,7 +54,6 @@ func (w Workflow) run(
 			nextWorkflow = RunFetchNextOthers
 			request = req
 			capability = models.CAPABILITY_FETCH_OTHERS
-			metadata["name"] = task.Name
 		case models.TASK_FETCH_PAYMENTS:
 			req := FetchNextPayments{
 				Config:      config,
@@ -73,57 +68,52 @@ func (w Workflow) run(
 			return fmt.Errorf("unknown task type: %v", task.TaskType)
 		}
 
-		// Create next wk in database
-		wk := models.Workflow{
-			ID:          uuid.New().String(),
-			ConnectorID: connectorID,
-			CreatedAt:   workflow.Now(ctx).UTC(),
-			Capability:  capability,
-			Metadata:    metadata,
-		}
-		err := activities.StorageWorkflowsStore(
-			infiniteRetryContext(ctx),
-			wk,
-		)
-		if err != nil {
-			return err
-		}
-
 		// Schedule next workflow every polling duration
-		scheduleHandle, err := w.temporalClient.ScheduleClient().Create(ctx.(context.Context), client.ScheduleOptions{
-			ID: uuid.New().String(),
+		// TODO(polo): context
+		var scheduleID string
+		if fromPayload == nil {
+			scheduleID = fmt.Sprintf("%s-%s", connectorID.String(), capability.String())
+		} else {
+			scheduleID = fmt.Sprintf("%s-%s-%s", connectorID.String(), capability.String(), fromPayload.ID)
+		}
+		scheduleHandle, err := w.temporalClient.ScheduleClient().Create(context.Background(), client.ScheduleOptions{
+			ID: scheduleID,
 			Spec: client.ScheduleSpec{
 				Intervals: []client.ScheduleIntervalSpec{
 					{
-						Every: config.PollingDuration,
+						Every: config.PollingPeriod,
 					},
 				},
 			},
 			Action: &client.ScheduleWorkflowAction{
 				Workflow: nextWorkflow,
 				Args: []interface{}{
-					plugin,
 					request,
 					task.NextTasks,
 				},
 				TaskQueue: connectorID.Reference,
 				// Search attributes are used to query workflows
 				SearchAttributes: map[string]any{
-					SearchAttributeWorkflowID: wk.ID,
+					SearchAttributeScheduleID: scheduleID,
 				},
 			},
 			Overlap:            enums.SCHEDULE_OVERLAP_POLICY_SKIP,
 			TriggerImmediately: true,
+			SearchAttributes: map[string]any{
+				SearchAttributeScheduleID: scheduleID,
+			},
 		})
 		if err != nil {
 			return err
 		}
 
-		err = activities.StorageSchedulesStore(ctx, models.Schedule{
-			ID:          scheduleHandle.GetID(),
-			ConnectorID: connectorID,
-			CreatedAt:   workflow.Now(ctx).UTC(),
-		})
+		err = activities.StorageSchedulesStore(
+			infiniteRetryContext(ctx),
+			models.Schedule{
+				ID:          scheduleHandle.GetID(),
+				ConnectorID: connectorID,
+				CreatedAt:   workflow.Now(ctx).UTC(),
+			})
 		if err != nil {
 			return err
 		}

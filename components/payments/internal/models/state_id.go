@@ -3,18 +3,11 @@ package models
 import (
 	"database/sql/driver"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 
 	"github.com/gibson042/canonicaljson-go"
 )
-
-type State struct {
-	ID          StateID
-	ConnectorID ConnectorID
-	State       json.RawMessage
-}
 
 type StateID struct {
 	Reference   string

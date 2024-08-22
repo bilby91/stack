@@ -32,48 +32,68 @@ func (w Workflow) runUninstallConnector(
 		return errors.Wrap(err, "terminate schedules")
 	}
 
-	// TODO(polo): workflow.Go
-	err := activities.StorageSchedulesDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
-	if err != nil {
-		return err
+	wg := workflow.NewWaitGroup(ctx)
+	errChan := make(chan error, 16)
+
+	wg.Add(1)
+	workflow.Go(ctx, func(ctx workflow.Context) {
+		defer wg.Done()
+		err := activities.StorageSchedulesDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+		errChan <- err
+	})
+
+	wg.Add(1)
+	workflow.Go(ctx, func(ctx workflow.Context) {
+		defer wg.Done()
+		err := activities.StorageInstancesDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+		errChan <- err
+	})
+
+	wg.Add(1)
+	workflow.Go(ctx, func(ctx workflow.Context) {
+		defer wg.Done()
+		err := activities.StorageTasksTreeDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+		errChan <- err
+	})
+
+	wg.Add(1)
+	workflow.Go(ctx, func(ctx workflow.Context) {
+		defer wg.Done()
+		err := activities.StorageBankAccountsDeleteRelatedAccounts(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+		errChan <- err
+	})
+
+	wg.Add(1)
+	workflow.Go(ctx, func(ctx workflow.Context) {
+		defer wg.Done()
+		err := activities.StorageAccountsDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+		errChan <- err
+	})
+
+	wg.Add(1)
+	workflow.Go(ctx, func(ctx workflow.Context) {
+		defer wg.Done()
+		err := activities.StoragePaymentsDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+		errChan <- err
+	})
+
+	wg.Add(1)
+	workflow.Go(ctx, func(ctx workflow.Context) {
+		defer wg.Done()
+		err := activities.StorageStatesDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+		errChan <- err
+	})
+
+	wg.Wait(ctx)
+	close(errChan)
+
+	for err := range errChan {
+		if err != nil {
+			return err
+		}
 	}
 
-	err = activities.StorageInstancesDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
-	if err != nil {
-		return err
-	}
-
-	err = activities.StorageTasksTreeDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
-	if err != nil {
-		return err
-	}
-
-	err = activities.StorageWorkflowsDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
-	if err != nil {
-		return err
-	}
-
-	err = activities.StorageBankAccountsDeleteRelatedAccounts(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
-	if err != nil {
-		return err
-	}
-
-	err = activities.StorageAccountsDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
-	if err != nil {
-		return err
-	}
-
-	err = activities.StoragePaymentsDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
-	if err != nil {
-		return err
-	}
-
-	err = activities.StorageStatesDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
-	if err != nil {
-		return err
-	}
-
-	err = activities.StorageConnectorsDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+	err := activities.StorageConnectorsDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
 	if err != nil {
 		return err
 	}

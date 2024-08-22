@@ -1,3 +1,5 @@
+create extension if not exists pgcrypto;
+
 -- connectors
 create table if not exists connectors (
     -- Mandatory fields
@@ -129,6 +131,30 @@ alter table payments
     references connectors (id)
     on delete cascade;
 
+-- payment adjustments
+create table if not exists payment_adjustments (
+    -- Mandatory fields
+    id          varchar not null,
+    payment_id  varchar not null,
+    created_at  timestamp without time zone not null,
+    status      text not null,
+    raw         json not null,
+
+    -- Optional fields
+    amount numeric,
+    asset  text,
+
+    -- Optional fields with default
+    metadata jsonb not null default '{}'::jsonb,
+
+    -- Primary key
+    primary key (id)
+);
+alter table payment_adjustments
+    add constraint payment_adjustments_payment_id_fk foreign key (payment_id)
+    references payments (id)
+    on delete cascade;
+
 -- pools
 create table if not exists pools (
     -- Mandatory fields
@@ -204,21 +230,26 @@ alter table tasks
     references connectors (id)
     on delete cascade;
 
--- workflow
-create table if not exists workflows (
+-- Workflow instance
+create table if not exists workflows_instances (
     -- Mandatory fields
-    id           varchar not null,
+    id           text not null,
+    schedule_id  text not null,
     connector_id varchar not null,
     created_at   timestamp without time zone not null,
-    name         text not null,
+    updated_at   timestamp without time zone not null,
 
     -- Optional fields with default
-    metadata jsonb not null default '{}'::jsonb,
+    terminated boolean not null default false,
+
+    -- Optional fields
+    terminated_at timestamp without time zone,
+    error         text,
 
     -- Primary key
-    primary key (id)
+    primary key (id, schedule_id, connector_id)
 );
-alter table workflows
-    add constraint workflows_connector_id_fk foreign key (connector_id)
+alter table workflows_instances
+    add constraint workflows_instances_connector_id_fk foreign key (connector_id)
     references connectors (id)
     on delete cascade;

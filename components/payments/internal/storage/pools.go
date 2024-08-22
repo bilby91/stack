@@ -22,7 +22,7 @@ type pool struct {
 	Name      string    `bun:"name,type:text,notnull"`
 	CreatedAt time.Time `bun:"created_at,type:timestamp without time zone,notnull"`
 
-	PoolAccounts []*poolAccounts `bun:"rel:has-many,join:id=pool_id,scanonly"`
+	PoolAccounts []*poolAccounts `bun:"rel:has-many,join:id=pool_id"`
 }
 
 type poolAccounts struct {

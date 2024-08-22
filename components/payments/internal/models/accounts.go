@@ -1,14 +1,8 @@
 package models
 
 import (
-	"database/sql/driver"
-	"encoding/base64"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"time"
-
-	"github.com/gibson042/canonicaljson-go"
 )
 
 // Internal struct used by the plugins
@@ -60,87 +54,69 @@ type Account struct {
 	Raw json.RawMessage `json:"raw"`
 }
 
-type AccountID struct {
-	Reference   string
-	ConnectorID ConnectorID
+func (a Account) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&struct {
+		ID           string            `json:"id"`
+		ConnectorID  string            `json:"connectorID"`
+		Reference    string            `json:"reference"`
+		CreatedAt    time.Time         `json:"createdAt"`
+		Type         AccountType       `json:"type"`
+		Name         *string           `json:"name"`
+		DefaultAsset *string           `json:"defaultAsset"`
+		Metadata     map[string]string `json:"metadata"`
+		Raw          json.RawMessage   `json:"raw"`
+	}{
+		ID:           a.ID.String(),
+		ConnectorID:  a.ConnectorID.String(),
+		Reference:    a.Reference,
+		CreatedAt:    a.CreatedAt,
+		Type:         a.Type,
+		Name:         a.Name,
+		DefaultAsset: a.DefaultAsset,
+		Metadata:     a.Metadata,
+		Raw:          a.Raw,
+	})
 }
 
-func (aid *AccountID) MarshalJSON() ([]byte, error) {
-	return []byte(aid.String()), nil
-}
-
-func (aid *AccountID) String() string {
-	if aid == nil || aid.Reference == "" {
-		return ""
+func (a *Account) UnmarshalJSON(data []byte) error {
+	var aux struct {
+		ID           string            `json:"id"`
+		ConnectorID  string            `json:"connectorID"`
+		Reference    string            `json:"reference"`
+		CreatedAt    time.Time         `json:"createdAt"`
+		Type         AccountType       `json:"type"`
+		Name         *string           `json:"name"`
+		DefaultAsset *string           `json:"defaultAsset"`
+		Metadata     map[string]string `json:"metadata"`
+		Raw          json.RawMessage   `json:"raw"`
 	}
 
-	data, err := canonicaljson.Marshal(aid)
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	id, err := AccountIDFromString(aux.ID)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	return base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(data)
-}
-
-func AccountIDFromString(value string) (AccountID, error) {
-	ret := AccountID{}
-
-	data, err := base64.URLEncoding.WithPadding(base64.NoPadding).DecodeString(value)
+	connectorID, err := ConnectorIDFromString(aux.ConnectorID)
 	if err != nil {
-		return ret, err
-	}
-	err = canonicaljson.Unmarshal(data, &ret)
-	if err != nil {
-		return ret, err
+		return err
 	}
 
-	return ret, nil
+	a.ID = id
+	a.ConnectorID = connectorID
+	a.Reference = aux.Reference
+	a.CreatedAt = aux.CreatedAt
+	a.Type = aux.Type
+	a.Name = aux.Name
+	a.DefaultAsset = aux.DefaultAsset
+	a.Metadata = aux.Metadata
+	a.Raw = aux.Raw
+
+	return nil
 }
-
-func MustAccountIDFromString(value string) AccountID {
-	id, err := AccountIDFromString(value)
-	if err != nil {
-		panic(err)
-	}
-	return id
-}
-
-func (aid AccountID) Value() (driver.Value, error) {
-	return aid.String(), nil
-}
-
-func (aid *AccountID) Scan(value interface{}) error {
-	if value == nil {
-		return errors.New("account id is nil")
-	}
-
-	if s, err := driver.String.ConvertValue(value); err == nil {
-
-		if v, ok := s.(string); ok {
-
-			id, err := AccountIDFromString(v)
-			if err != nil {
-				return fmt.Errorf("failed to parse account id %s: %v", v, err)
-			}
-
-			*aid = id
-			return nil
-		}
-	}
-
-	return fmt.Errorf("failed to scan account id: %v", value)
-}
-
-type AccountType string
-
-const (
-	ACCOUNT_TYPE_UNKNOWN AccountType = "UNKNOWN"
-	// Internal accounts refers to user's digital e-wallets. It serves as a
-	// secure storage for funds within the payments provider environment.
-	ACCOUNT_TYPE_INTERNAL AccountType = "INTERNAL"
-	// External accounts represents actual bank accounts of the user.
-	ACCOUNT_TYPE_EXTERNAL AccountType = "EXTERNAL"
-)
 
 func FromPSPAccount(from PSPAccount, accountType AccountType, connectorID ConnectorID) Account {
 	return Account{

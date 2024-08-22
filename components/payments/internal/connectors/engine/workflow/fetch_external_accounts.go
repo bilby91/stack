@@ -2,6 +2,7 @@ package workflow
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
@@ -13,30 +14,46 @@ import (
 type FetchNextExternalAccounts struct {
 	Config      models.Config      `json:"config"`
 	ConnectorID models.ConnectorID `json:"connectorID"`
-	FromPayload json.RawMessage    `json:"fromPayload"`
+	FromPayload *FromPayload       `json:"fromPayload"`
 }
 
 func (w Workflow) runFetchNextExternalAccounts(
 	ctx workflow.Context,
-	plugin models.Plugin,
 	fetchNextExternalAccount FetchNextExternalAccounts,
 	nextTasks []models.TaskTree,
 ) error {
+	if err := w.createInstance(ctx, fetchNextExternalAccount.ConnectorID); err != nil {
+		return errors.Wrap(err, "creating instance")
+	}
+	err := w.fetchExternalAccounts(ctx, fetchNextExternalAccount, nextTasks)
+	return w.terminateInstance(ctx, fetchNextExternalAccount.ConnectorID, err)
+}
+
+func (w Workflow) fetchExternalAccounts(
+	ctx workflow.Context,
+	fetchNextExternalAccount FetchNextExternalAccounts,
+	nextTasks []models.TaskTree,
+) error {
+	stateReference := fmt.Sprintf("%s", models.CAPABILITY_FETCH_EXTERNAL_ACCOUNTS.String())
+	if fetchNextExternalAccount.FromPayload != nil {
+		stateReference = fmt.Sprintf("%s-%s", models.CAPABILITY_FETCH_EXTERNAL_ACCOUNTS.String(), fetchNextExternalAccount.FromPayload.ID)
+	}
+
 	stateID := models.StateID{
-		Reference:   workflow.GetInfo(ctx).WorkflowExecution.ID,
+		Reference:   stateReference,
 		ConnectorID: fetchNextExternalAccount.ConnectorID,
 	}
 	state, err := activities.StorageStatesGet(infiniteRetryContext(ctx), stateID)
 	if err != nil {
-		return errors.Wrapf(err, "retrieving state: %s", stateID.String)
+		return fmt.Errorf("retrieving state %s: %v", stateID.String(), err)
 	}
 
 	hasMore := true
 	for hasMore {
 		externalAccountsResponse, err := activities.PluginFetchNextExternalAccounts(
 			infiniteRetryContext(ctx),
-			plugin,
-			fetchNextExternalAccount.FromPayload,
+			fetchNextExternalAccount.ConnectorID,
+			fetchNextExternalAccount.FromPayload.GetPayload(),
 			state.State,
 			fetchNextExternalAccount.Config.PageSize,
 		)
@@ -44,22 +61,24 @@ func (w Workflow) runFetchNextExternalAccounts(
 			return errors.Wrap(err, "fetching next accounts")
 		}
 
-		err = activities.StorageAccountsStore(
-			infiniteRetryContext(ctx),
-			models.FromPSPAccounts(
-				externalAccountsResponse.ExternalAccounts,
-				models.ACCOUNT_TYPE_EXTERNAL,
-				fetchNextExternalAccount.ConnectorID,
-			),
-		)
-		if err != nil {
-			return errors.Wrap(err, "storing next accounts")
+		if len(externalAccountsResponse.ExternalAccounts) > 0 {
+			err = activities.StorageAccountsStore(
+				infiniteRetryContext(ctx),
+				models.FromPSPAccounts(
+					externalAccountsResponse.ExternalAccounts,
+					models.ACCOUNT_TYPE_EXTERNAL,
+					fetchNextExternalAccount.ConnectorID,
+				),
+			)
+			if err != nil {
+				return errors.Wrap(err, "storing next accounts")
+			}
 		}
 
 		state.State = externalAccountsResponse.NewState
 		err = activities.StorageStatesStore(
 			infiniteRetryContext(ctx),
-			state,
+			*state,
 		)
 		if err != nil {
 			return errors.Wrap(err, "storing state")
@@ -82,10 +101,12 @@ func (w Workflow) runFetchNextExternalAccounts(
 					},
 				),
 				Run,
-				plugin,
 				fetchNextExternalAccount.Config,
 				fetchNextExternalAccount.ConnectorID,
-				payload,
+				&FromPayload{
+					ID:      externalAccount.Reference,
+					Payload: payload,
+				},
 				nextTasks,
 			).Get(ctx, nil); err != nil {
 				return errors.Wrap(err, "running next workflow")

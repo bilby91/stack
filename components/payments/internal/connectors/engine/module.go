@@ -20,8 +20,8 @@ func Module(pluginPath map[string]string) fx.Option {
 		fx.Provide(func() plugins.Plugins {
 			return plugins.New(pluginPath)
 		}),
-		fx.Provide(func(temporalClient client.Client) workflow.Workflow {
-			return workflow.New(temporalClient)
+		fx.Provide(func(temporalClient client.Client, plugins plugins.Plugins) workflow.Workflow {
+			return workflow.New(temporalClient, plugins)
 		}),
 		fx.Provide(func(storage storage.Storage, plugins plugins.Plugins) activities.Activities {
 			return activities.New(storage, plugins)
@@ -31,11 +31,10 @@ func Module(pluginPath map[string]string) fx.Option {
 				return NewWorkers(temporalClient, workflows, activities, options)
 			}, fx.ParamTags(``, `group:"workflows"`, `group:"activities"`, ``)),
 		),
-		fx.Invoke(func(lc fx.Lifecycle, workers *Workers) {
+		fx.Invoke(func(lc fx.Lifecycle, engine Engine, workers *Workers) {
 			lc.Append(fx.Hook{
 				OnStart: func(ctx context.Context) error {
-					// TODO(polo): fill workers from database
-					return nil
+					return engine.OnStart(ctx)
 				},
 				OnStop: func(ctx context.Context) error {
 					workers.Close()

@@ -35,7 +35,7 @@ type bankAccount struct {
 	// c.f. https://bun.uptrace.dev/guide/models.html#default
 	Metadata map[string]string `bun:"metadata,type:jsonb,nullzero,notnull,default:'{}'"`
 
-	RelatedAccounts []bankAccountRelatedAccount `bun:"rel:has-many,join:id=bank_account_id,scanonly"`
+	RelatedAccounts []*bankAccountRelatedAccount `bun:"rel:has-many,join:id=bank_account_id"`
 }
 
 func (s *store) BankAccountsUpsert(ctx context.Context, bankAccount models.BankAccount) error {
@@ -201,7 +201,7 @@ func (s *store) BankAccountsList(ctx context.Context, q ListBankAccountsQuery) (
 }
 
 type bankAccountRelatedAccount struct {
-	bun.BaseModel `bun:"table:bank_account_related_accounts"`
+	bun.BaseModel `bun:"table:bank_accounts_related_accounts"`
 
 	// Mandatory fields
 	BankAccountID uuid.UUID          `bun:"bank_account_id,pk,type:uuid,notnull"`
@@ -257,9 +257,9 @@ func fromBankAccountModels(from models.BankAccount) bankAccount {
 		ba.SwiftBicCode = *from.SwiftBicCode
 	}
 
-	relatedAccounts := make([]bankAccountRelatedAccount, 0, len(from.RelatedAccounts))
+	relatedAccounts := make([]*bankAccountRelatedAccount, 0, len(from.RelatedAccounts))
 	for _, ra := range from.RelatedAccounts {
-		relatedAccounts = append(relatedAccounts, fromBankAccountRelatedAccountModels(ra))
+		relatedAccounts = append(relatedAccounts, pointer.For(fromBankAccountRelatedAccountModels(ra)))
 	}
 	ba.RelatedAccounts = relatedAccounts
 
@@ -289,7 +289,7 @@ func toBankAccountModels(from bankAccount) models.BankAccount {
 
 	relatedAccounts := make([]models.BankAccountRelatedAccount, 0, len(from.RelatedAccounts))
 	for _, ra := range from.RelatedAccounts {
-		relatedAccounts = append(relatedAccounts, toBankAccountRelatedAccountModels(ra))
+		relatedAccounts = append(relatedAccounts, toBankAccountRelatedAccountModels(*ra))
 	}
 	ba.RelatedAccounts = relatedAccounts
 

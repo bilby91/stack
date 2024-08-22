@@ -78,9 +78,12 @@ func newRouter(backend backend.Backend, a auth.Auth) *chi.Mux {
 				r.Delete("/", connectorsUninstall(backend))
 				r.Get("/config", connectorsConfig(backend))
 				r.Post("/reset", connectorsReset(backend))
+
+				r.Get("/schedules", schedulesList(backend))
+				r.Route("/schedules/{scheduleID}", func(r chi.Router) {
+					r.Get("/instances", workflowsInstancesList(backend))
+				})
 				// TODO(polo): add update config handler
-				// TODO(polo): add get tasks handler
-				// TODO(polo): add get task handler
 			})
 		})
 	})
@@ -106,4 +109,8 @@ func poolID(r *http.Request) string {
 
 func bankAccountID(r *http.Request) string {
 	return chi.URLParam(r, "bankAccountID")
+}
+
+func scheduleID(r *http.Request) string {
+	return chi.URLParam(r, "scheduleID")
 }
