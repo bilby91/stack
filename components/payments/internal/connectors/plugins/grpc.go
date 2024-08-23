@@ -3,28 +3,43 @@ package plugins
 import (
 	"context"
 	"errors"
+	"os"
 
 	"github.com/formancehq/payments/internal/connectors/grpc"
 	"github.com/formancehq/payments/internal/connectors/grpc/proto"
 	"github.com/formancehq/payments/internal/connectors/grpc/proto/services"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/gogo/status"
+	"github.com/hashicorp/go-hclog"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type impl struct {
+	logger hclog.Logger
+
 	plugin models.Plugin
 }
 
 func NewGRPCImplem(plugin models.Plugin) *impl {
-	return &impl{plugin: plugin}
+	logger := hclog.New(&hclog.LoggerOptions{
+		Level:  hclog.Debug,
+		Output: os.Stderr,
+	})
+
+	return &impl{
+		logger: logger,
+		plugin: plugin,
+	}
 }
 
 func (i *impl) Install(ctx context.Context, req *services.InstallRequest) (*services.InstallResponse, error) {
+	i.logger.Info("installing...")
+
 	resp, err := i.plugin.Install(ctx, models.InstallRequest{
 		Config: req.Config,
 	})
 	if err != nil {
+		i.logger.Error("install failed: ", err)
 		return nil, translateErrorToGRPC(err)
 	}
 
@@ -33,6 +48,8 @@ func (i *impl) Install(ctx context.Context, req *services.InstallRequest) (*serv
 		capabilities = append(capabilities, proto.Capability(capability))
 	}
 
+	i.logger.Info("installed!")
+
 	return &services.InstallResponse{
 		Capabilities: capabilities,
 		Workflow:     grpc.TranslateWorkflow(resp.Workflow),
@@ -40,12 +57,15 @@ func (i *impl) Install(ctx context.Context, req *services.InstallRequest) (*serv
 }
 
 func (i *impl) FetchNextAccounts(ctx context.Context, req *services.FetchNextAccountsRequest) (*services.FetchNextAccountsResponse, error) {
+	i.logger.Info("fetching next accounts...")
+
 	resp, err := i.plugin.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{
 		FromPayload: req.FromPayload,
 		State:       req.State,
 		PageSize:    int(req.PageSize),
 	})
 	if err != nil {
+		i.logger.Error("fetching next accounts failed: ", err)
 		return nil, translateErrorToGRPC(err)
 	}
 
@@ -53,6 +73,8 @@ func (i *impl) FetchNextAccounts(ctx context.Context, req *services.FetchNextAcc
 	for _, account := range resp.Accounts {
 		accounts = append(accounts, grpc.TranslateAccount(account))
 	}
+
+	i.logger.Info("fetched next accounts succeeded!")
 
 	return &services.FetchNextAccountsResponse{
 		Accounts: accounts,
@@ -62,12 +84,15 @@ func (i *impl) FetchNextAccounts(ctx context.Context, req *services.FetchNextAcc
 }
 
 func (i *impl) FetchNextExternalAccounts(ctx context.Context, req *services.FetchNextExternalAccountsRequest) (*services.FetchNextExternalAccountsResponse, error) {
+	i.logger.Info("fetching next external accounts...")
+
 	resp, err := i.plugin.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{
 		FromPayload: req.FromPayload,
 		State:       req.State,
 		PageSize:    int(req.PageSize),
 	})
 	if err != nil {
+		i.logger.Error("fetching next external accounts failed: ", err)
 		return nil, translateErrorToGRPC(err)
 	}
 
@@ -75,6 +100,8 @@ func (i *impl) FetchNextExternalAccounts(ctx context.Context, req *services.Fetc
 	for _, account := range resp.ExternalAccounts {
 		externalAccounts = append(externalAccounts, grpc.TranslateAccount(account))
 	}
+
+	i.logger.Info("fetched next external accounts succeeded!")
 
 	return &services.FetchNextExternalAccountsResponse{
 		Accounts: externalAccounts,
@@ -84,12 +111,15 @@ func (i *impl) FetchNextExternalAccounts(ctx context.Context, req *services.Fetc
 }
 
 func (i *impl) FetchNextPayments(ctx context.Context, req *services.FetchNextPaymentsRequest) (*services.FetchNextPaymentsResponse, error) {
+	i.logger.Info("fetching next payments...")
+
 	resp, err := i.plugin.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{
 		FromPayload: req.FromPayload,
 		State:       req.State,
 		PageSize:    int(req.PageSize),
 	})
 	if err != nil {
+		i.logger.Error("fetching next payments failed: ", err)
 		return nil, translateErrorToGRPC(err)
 	}
 
@@ -97,6 +127,8 @@ func (i *impl) FetchNextPayments(ctx context.Context, req *services.FetchNextPay
 	for _, payment := range resp.Payments {
 		payments = append(payments, grpc.TranslatePayment(payment))
 	}
+
+	i.logger.Info("fetched next payments succeeded!")
 
 	return &services.FetchNextPaymentsResponse{
 		Payments: payments,
@@ -106,6 +138,8 @@ func (i *impl) FetchNextPayments(ctx context.Context, req *services.FetchNextPay
 }
 
 func (i *impl) FetchNextOthers(ctx context.Context, req *services.FetchNextOthersRequest) (*services.FetchNextOthersResponse, error) {
+	i.logger.Info("fetching next others...")
+
 	resp, err := i.plugin.FetchNextOthers(ctx, models.FetchNextOthersRequest{
 		FromPayload: req.FromPayload,
 		State:       req.State,
@@ -113,6 +147,7 @@ func (i *impl) FetchNextOthers(ctx context.Context, req *services.FetchNextOther
 		Name:        req.Name,
 	})
 	if err != nil {
+		i.logger.Error("fetching next others failed: ", err)
 		return nil, translateErrorToGRPC(err)
 	}
 
@@ -124,6 +159,8 @@ func (i *impl) FetchNextOthers(ctx context.Context, req *services.FetchNextOther
 		})
 	}
 
+	i.logger.Info("fetched next others succeeded!")
+
 	return &services.FetchNextOthersResponse{
 		Others:   others,
 		NewState: resp.NewState,
@@ -132,12 +169,17 @@ func (i *impl) FetchNextOthers(ctx context.Context, req *services.FetchNextOther
 }
 
 func (i *impl) CreateBankAccount(ctx context.Context, req *services.CreateBankAccountRequest) (*services.CreateBankAccountResponse, error) {
+	i.logger.Info("creating bank account...")
+
 	resp, err := i.plugin.CreateBankAccount(ctx, models.CreateBankAccountRequest{
 		BankAccount: grpc.TranslateProtoBankAccount(req.BankAccount),
 	})
 	if err != nil {
+		i.logger.Error("creating bank account failed: ", err)
 		return nil, translateErrorToGRPC(err)
 	}
+
+	i.logger.Info("created bank account succeeded!")
 
 	return &services.CreateBankAccountResponse{
 		RelatedAccount: grpc.TranslateAccount(resp.RelatedAccount),

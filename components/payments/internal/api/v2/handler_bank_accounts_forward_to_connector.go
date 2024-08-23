@@ -7,6 +7,7 @@ import (
 
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/otel"
 	"github.com/formancehq/stack/libs/go-libs/api"
 	"github.com/google/uuid"
 )
@@ -25,11 +26,12 @@ func (f *bankAccountsForwardToConnectorRequest) Validate() error {
 
 func bankAccountsForwardToConnector(backend backend.Backend) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// TODO(polo): add span
-		ctx := r.Context()
+		ctx, span := otel.Tracer().Start(r.Context(), "v2_bankAccountsForwardToConnector")
+		defer span.End()
 
 		id, err := uuid.Parse(bankAccountID(r))
 		if err != nil {
+			otel.RecordError(span, err)
 			api.BadRequest(w, ErrInvalidID, err)
 			return
 		}
@@ -37,24 +39,28 @@ func bankAccountsForwardToConnector(backend backend.Backend) http.HandlerFunc {
 		var req bankAccountsForwardToConnectorRequest
 		err = json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
+			otel.RecordError(span, err)
 			api.BadRequest(w, ErrMissingOrInvalidBody, err)
 			return
 		}
 
 		err = req.Validate()
 		if err != nil {
+			otel.RecordError(span, err)
 			api.BadRequest(w, ErrMissingOrInvalidBody, err)
 			return
 		}
 
 		connectorID, err := models.ConnectorIDFromString(req.ConnectorID)
 		if err != nil {
+			otel.RecordError(span, err)
 			api.BadRequest(w, ErrValidation, err)
 			return
 		}
 
 		bankAccount, err := backend.BankAccountsForwardToConnector(ctx, id, connectorID)
 		if err != nil {
+			otel.RecordError(span, err)
 			handleServiceErrors(w, r, err)
 			return
 		}
@@ -96,6 +102,7 @@ func bankAccountsForwardToConnector(backend backend.Backend) http.HandlerFunc {
 			Data: data,
 		})
 		if err != nil {
+			otel.RecordError(span, err)
 			api.InternalServerError(w, r, err)
 			return
 		}

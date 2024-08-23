@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/formancehq/payments/internal/api/backend"
+	"github.com/formancehq/payments/internal/otel"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/formancehq/stack/libs/go-libs/api"
 	"github.com/formancehq/stack/libs/go-libs/bun/bunpaginate"
@@ -13,8 +14,8 @@ import (
 
 func poolsList(backend backend.Backend) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// TODO(polo): add span
-		ctx := r.Context()
+		ctx, span := otel.Tracer().Start(r.Context(), "v2_poolsList")
+		defer span.End()
 
 		query, err := bunpaginate.Extract[storage.ListPoolsQuery](r, func() (*storage.ListPoolsQuery, error) {
 			options, err := getPagination(r, storage.PoolQuery{})
@@ -24,12 +25,14 @@ func poolsList(backend backend.Backend) http.HandlerFunc {
 			return pointer.For(storage.NewListPoolsQuery(*options)), nil
 		})
 		if err != nil {
+			otel.RecordError(span, err)
 			api.BadRequest(w, ErrValidation, err)
 			return
 		}
 
 		cursor, err := backend.PoolsList(ctx, *query)
 		if err != nil {
+			otel.RecordError(span, err)
 			handleServiceErrors(w, r, err)
 			return
 		}
@@ -59,6 +62,7 @@ func poolsList(backend backend.Backend) http.HandlerFunc {
 			},
 		})
 		if err != nil {
+			otel.RecordError(span, err)
 			api.InternalServerError(w, r, err)
 			return
 		}

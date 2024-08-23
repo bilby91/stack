@@ -15,5 +15,39 @@
             "required": true,
             "defaultValue": ""
         }
+    },
+    "currencycloud": {
+        "loginID": {
+            "dataType": "string",
+            "required": true,
+            "defaultValue": ""
+        },
+        "apiKey": {
+            "dataType": "string",
+            "required": true,
+            "defaultValue": ""
+        },
+        "endpoint": {
+            "dataType": "string",
+            "required": true,
+            "defaultValue": ""
+        }
+    },
+    "mangopay": {
+        "clientID": {
+            "dataType": "string",
+            "required": true,
+            "defaultValue": ""
+        },
+        "apiKey": {
+            "dataType": "string",
+            "required": true,
+            "defaultValue": ""
+        },
+        "endpoint": {
+            "dataType": "string",
+            "required": true,
+            "defaultValue": ""
+        }
     }
 }

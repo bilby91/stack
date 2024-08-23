@@ -13,11 +13,14 @@ import (
 	"github.com/formancehq/payments/internal/storage"
 	sharedapi "github.com/formancehq/stack/libs/go-libs/api"
 	"github.com/formancehq/stack/libs/go-libs/auth"
+	"github.com/formancehq/stack/libs/go-libs/aws/iam"
 	"github.com/formancehq/stack/libs/go-libs/bun/bunconnect"
 	"github.com/formancehq/stack/libs/go-libs/bun/bunmigrate"
 	"github.com/formancehq/stack/libs/go-libs/health"
 	"github.com/formancehq/stack/libs/go-libs/licence"
+	"github.com/formancehq/stack/libs/go-libs/otlp/otlpmetrics"
 	"github.com/formancehq/stack/libs/go-libs/otlp/otlptraces"
+	"github.com/formancehq/stack/libs/go-libs/service"
 	"github.com/formancehq/stack/libs/go-libs/temporal"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -62,6 +65,15 @@ func NewRootCommand() *cobra.Command {
 	server.Flags().String(listenFlag, ":8080", "Listen address")
 	server.Flags().String(pluginsDirectoryPathFlag, "", "Plugin directory path")
 	root.AddCommand(server)
+
+	service.BindFlags(root)
+	otlpmetrics.InitOTLPMetricsFlags(root.PersistentFlags())
+	otlptraces.InitOTLPTracesFlags(root.PersistentFlags())
+	auth.InitAuthFlags(root.PersistentFlags())
+	bunconnect.InitFlags(root.PersistentFlags())
+	iam.InitFlags(root.PersistentFlags())
+	temporal.InitCLIFlags(root)
+	licence.InitCLIFlags(root)
 
 	return root
 }

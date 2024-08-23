@@ -65,7 +65,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 
 			newState.LastCreatedAt = createdAt
 
-			payment, err := transactionToPayments(transaction)
+			payment, err := transactionToPayment(transaction)
 			if err != nil {
 				return models.FetchNextPaymentsResponse{}, err
 			}
@@ -101,7 +101,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 	}, nil
 }
 
-func transactionToPayments(transaction *client.Transaction) (*models.PSPPayment, error) {
+func transactionToPayment(transaction *client.Transaction) (*models.PSPPayment, error) {
 	rawData, err := json.Marshal(transaction)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal transaction: %w", err)

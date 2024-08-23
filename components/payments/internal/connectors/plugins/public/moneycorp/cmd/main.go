@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	// TODO(logger, metrics etc...)
+	// TODO(polo): metrics
 	plugin.Serve(&plugin.ServeConfig{
 		HandshakeConfig: grpc.Handshake,
 		Plugins: map[string]plugin.Plugin{

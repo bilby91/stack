@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/api/backend"
+	"github.com/formancehq/payments/internal/otel"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/formancehq/stack/libs/go-libs/api"
 	"github.com/formancehq/stack/libs/go-libs/bun/bunpaginate"
@@ -25,8 +26,8 @@ type listTasksResponseElement struct {
 
 func tasksList(backend backend.Backend) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// TODO(polo): add span
-		ctx := r.Context()
+		ctx, span := otel.Tracer().Start(r.Context(), "v2_tasksList")
+		defer span.End()
 
 		query, err := bunpaginate.Extract[storage.ListSchedulesQuery](r, func() (*storage.ListSchedulesQuery, error) {
 			pageSize, err := bunpaginate.GetPageSize(r)
@@ -37,12 +38,14 @@ func tasksList(backend backend.Backend) http.HandlerFunc {
 			return pointer.For(storage.NewListSchedulesQuery(bunpaginate.NewPaginatedQueryOptions(storage.ScheduleQuery{}).WithPageSize(pageSize))), nil
 		})
 		if err != nil {
+			otel.RecordError(span, err)
 			api.BadRequest(w, ErrValidation, err)
 			return
 		}
 
 		cursor, err := backend.SchedulesList(ctx, *query)
 		if err != nil {
+			otel.RecordError(span, err)
 			handleServiceErrors(w, r, err)
 			return
 		}
@@ -51,6 +54,7 @@ func tasksList(backend backend.Backend) http.HandlerFunc {
 		for i := range cursor.Data {
 			raw, err := json.Marshal(&cursor.Data[i])
 			if err != nil {
+				otel.RecordError(span, err)
 				api.InternalServerError(w, r, err)
 				return
 			}
@@ -75,6 +79,7 @@ func tasksList(backend backend.Backend) http.HandlerFunc {
 			},
 		})
 		if err != nil {
+			otel.RecordError(span, err)
 			api.InternalServerError(w, r, err)
 			return
 		}

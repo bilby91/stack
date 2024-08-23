@@ -5,21 +5,24 @@ import (
 
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/otel"
 	"github.com/formancehq/stack/libs/go-libs/api"
 )
 
 func connectorsReset(backend backend.Backend) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// TODO(polo): add open telemetry span
-		ctx := r.Context()
+		ctx, span := otel.Tracer().Start(r.Context(), "v2_connectorsReset")
+		defer span.End()
 
 		connectorID, err := models.ConnectorIDFromString(connectorID(r))
 		if err != nil {
+			otel.RecordError(span, err)
 			api.BadRequest(w, ErrInvalidID, err)
 			return
 		}
 
 		if err := backend.ConnectorsReset(ctx, connectorID); err != nil {
+			otel.RecordError(span, err)
 			handleServiceErrors(w, r, err)
 			return
 		}

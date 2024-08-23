@@ -3,7 +3,6 @@ package moneycorp
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"time"
 
 	"github.com/formancehq/payments/internal/models"
@@ -72,7 +71,6 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 			break
 		}
 
-		log.Println("LEN ACCOUNTS AND PAGE SIZE", len(accounts), req.PageSize)
 		if len(accounts) >= req.PageSize {
 			hasMore = true
 			break

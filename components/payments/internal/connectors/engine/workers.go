@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/stack/libs/go-libs/logging"
 	"github.com/formancehq/stack/libs/go-libs/temporal"
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/client"
@@ -12,6 +13,8 @@ import (
 )
 
 type Workers struct {
+	logger logging.Logger
+
 	temporalClient client.Client
 
 	workers map[string]Worker
@@ -27,8 +30,9 @@ type Worker struct {
 	worker worker.Worker
 }
 
-func NewWorkers(temporalClient client.Client, workflows, activities []temporal.DefinitionSet, options worker.Options) *Workers {
+func NewWorkers(logger logging.Logger, temporalClient client.Client, workflows, activities []temporal.DefinitionSet, options worker.Options) *Workers {
 	return &Workers{
+		logger:         logger,
 		temporalClient: temporalClient,
 		workers:        make(map[string]Worker),
 		workflows:      workflows,
@@ -77,14 +81,15 @@ func (w *Workers) AddWorker(connectorID models.ConnectorID) error {
 	go func() {
 		err := worker.Run(nil)
 		if err != nil {
-			// TODO(polo): log error
-			_ = err
+			w.logger.Errorf("worker loop stopped: %v", err)
 		}
 	}()
 
 	w.workers[connectorID.String()] = Worker{
 		worker: worker,
 	}
+
+	w.logger.Infof("worker for connector %s started", connectorID.String())
 
 	return nil
 }
@@ -102,6 +107,8 @@ func (w *Workers) RemoveWorker(connectorID models.ConnectorID) error {
 	worker.worker.Stop()
 
 	delete(w.workers, connectorID.String())
+
+	w.logger.Infof("worker for connector %s removed", connectorID.String())
 
 	return nil
 }

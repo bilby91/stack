@@ -7,23 +7,26 @@ import (
 	"strings"
 
 	"github.com/formancehq/payments/internal/api/backend"
+	"github.com/formancehq/payments/internal/otel"
 	"github.com/formancehq/stack/libs/go-libs/api"
 	"github.com/formancehq/stack/libs/go-libs/contextutil"
 )
 
 func connectorsInstall(backend backend.Backend) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// TODO(polo): add open telemetry span
-		ctx := r.Context()
+		ctx, span := otel.Tracer().Start(r.Context(), "v2_connectorsInstall")
+		defer span.End()
 
 		provider := strings.ToLower(connectorProvider(r))
 		if provider == "" {
+			otel.RecordError(span, errors.New("provider is required"))
 			api.BadRequest(w, ErrValidation, errors.New("provider is required"))
 			return
 		}
 
 		config, err := io.ReadAll(r.Body)
 		if err != nil {
+			otel.RecordError(span, err)
 			api.BadRequest(w, ErrMissingOrInvalidBody, err)
 			return
 		}
@@ -33,6 +36,7 @@ func connectorsInstall(backend backend.Backend) http.HandlerFunc {
 		ctx, _ = contextutil.Detached(ctx)
 		connectorID, err := backend.ConnectorsInstall(ctx, provider, config)
 		if err != nil {
+			otel.RecordError(span, err)
 			handleServiceErrors(w, r, err)
 			return
 		}

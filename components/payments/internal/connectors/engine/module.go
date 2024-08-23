@@ -7,6 +7,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/engine/plugins"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
 	"github.com/formancehq/payments/internal/storage"
+	"github.com/formancehq/stack/libs/go-libs/logging"
 	"github.com/formancehq/stack/libs/go-libs/temporal"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
@@ -27,9 +28,9 @@ func Module(pluginPath map[string]string) fx.Option {
 			return activities.New(storage, plugins)
 		}),
 		fx.Provide(
-			fx.Annotate(func(temporalClient client.Client, workflows, activities []temporal.DefinitionSet, options worker.Options) *Workers {
-				return NewWorkers(temporalClient, workflows, activities, options)
-			}, fx.ParamTags(``, `group:"workflows"`, `group:"activities"`, ``)),
+			fx.Annotate(func(logger logging.Logger, temporalClient client.Client, workflows, activities []temporal.DefinitionSet, options worker.Options) *Workers {
+				return NewWorkers(logger, temporalClient, workflows, activities, options)
+			}, fx.ParamTags(``, ``, `group:"workflows"`, `group:"activities"`, ``)),
 		),
 		fx.Invoke(func(lc fx.Lifecycle, engine Engine, workers *Workers) {
 			lc.Append(fx.Hook{

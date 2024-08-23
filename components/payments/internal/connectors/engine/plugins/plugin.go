@@ -1,11 +1,14 @@
 package plugins
 
 import (
+	"fmt"
+	"os"
 	"os/exec"
 	"sync"
 
 	"github.com/formancehq/payments/internal/connectors/grpc"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
 	"github.com/pkg/errors"
 )
@@ -59,6 +62,11 @@ func (p *plugins) RegisterPlugin(connectorID models.ConnectorID) error {
 		Plugins:          grpc.PluginMap,
 		Cmd:              exec.Command("sh", "-c", pluginPath),
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
+		Logger: hclog.New(&hclog.LoggerOptions{
+			Name:   fmt.Sprintf("%s-%s", connectorID.Provider, connectorID.String()),
+			Output: os.Stdout,
+			Level:  hclog.Debug,
+		}),
 	})
 
 	p.plugins[connectorID.String()] = pluginInformation{

@@ -8,6 +8,7 @@ import (
 
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/otel"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/formancehq/stack/libs/go-libs/api"
 	"github.com/formancehq/stack/libs/go-libs/bun/bunpaginate"
@@ -24,11 +25,12 @@ type balancesResponse struct {
 
 func accountsBalances(backend backend.Backend) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// TODO(polo): add span
-		ctx := r.Context()
+		ctx, span := otel.Tracer().Start(r.Context(), "v2_accountsBalances")
+		defer span.End()
 
 		balanceQuery, err := populateBalanceQueryFromRequest(r)
 		if err != nil {
+			otel.RecordError(span, err)
 			api.BadRequest(w, ErrValidation, err)
 			return
 		}
@@ -41,12 +43,14 @@ func accountsBalances(backend backend.Backend) http.HandlerFunc {
 			return pointer.For(storage.NewListBalancesQuery(*options)), nil
 		})
 		if err != nil {
+			otel.RecordError(span, err)
 			api.BadRequest(w, ErrValidation, err)
 			return
 		}
 
 		cursor, err := backend.BalancesList(ctx, *query)
 		if err != nil {
+			otel.RecordError(span, err)
 			handleServiceErrors(w, r, err)
 			return
 		}
@@ -74,6 +78,7 @@ func accountsBalances(backend backend.Backend) http.HandlerFunc {
 			},
 		})
 		if err != nil {
+			otel.RecordError(span, err)
 			api.InternalServerError(w, r, err)
 			return
 		}

@@ -13,7 +13,7 @@ type Config struct {
 	Endpoint string `json:"endpoint"`
 }
 
-func (c Config) Validate() error {
+func (c Config) validate() error {
 	if c.ClientID == "" {
 		return errors.Wrap(models.ErrInvalidConfig, "missing clientID in config")
 	}
@@ -35,5 +35,5 @@ func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 		return Config{}, errors.Wrap(models.ErrInvalidConfig, err.Error())
 	}
 
-	return config, config.Validate()
+	return config, config.validate()
 }
