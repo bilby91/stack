@@ -11,11 +11,14 @@ const (
 )
 
 type Account struct {
+	// todo: clean models by keeping all related bun specificity in the storage package
 	bun.BaseModel `bun:"table:accounts,alias:accounts"`
 
-	Address    string            `json:"address"`
-	Metadata   metadata.Metadata `json:"metadata"`
-	FirstUsage time.Time         `json:"-" bun:"first_usage,type:timestamp without timezone"`
+	Address    string            `json:"address,type:varchar"`
+	Metadata   metadata.Metadata `json:"metadata,type:jsonb"`
+	FirstUsage time.Time         `json:"-" bun:"first_usage,type:timestamp"`
+	InsertionDate time.Time         `bun:"insertion_date,type:timestamp"`
+	UpdatedAt     time.Time         `bun:"updated_at,type:timestamp"`
 }
 
 func (a Account) copy() Account {

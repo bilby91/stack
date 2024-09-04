@@ -30,7 +30,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	pgServer.LoadAsync(func() *PostgresServer {
 		By("Initializing postgres server")
-		return CreatePostgresServer(GinkgoT(), dockerPool.GetValue())
+		return CreatePostgresServer(GinkgoT(), dockerPool.GetValue(), WithPGStatsExtension())
 	})
 
 	By("Waiting services alive")

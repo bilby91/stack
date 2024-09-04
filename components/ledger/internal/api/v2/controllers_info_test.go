@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	ledgercontroller "github.com/formancehq/ledger/internal/controller/ledger"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -16,9 +17,7 @@ import (
 
 	ledger "github.com/formancehq/ledger/internal"
 	v2 "github.com/formancehq/ledger/internal/api/v2"
-	"github.com/formancehq/ledger/internal/engine"
 	"github.com/formancehq/ledger/internal/opentelemetry/metrics"
-	"github.com/formancehq/ledger/internal/storage/ledgerstore"
 	sharedapi "github.com/formancehq/stack/libs/go-libs/api"
 	"github.com/formancehq/stack/libs/go-libs/metadata"
 	"github.com/formancehq/stack/libs/go-libs/migrations"
@@ -76,7 +75,7 @@ func TestGetStats(t *testing.T) {
 	backend, mock := newTestingBackend(t, true)
 	router := v2.NewRouter(backend, nil, metrics.NewNoOpRegistry(), auth.NewNoAuth(), testing.Verbose())
 
-	expectedStats := engine.Stats{
+	expectedStats := ledgercontroller.Stats{
 		Transactions: 10,
 		Accounts:     5,
 	}
@@ -92,7 +91,7 @@ func TestGetStats(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, rec.Code)
 
-	stats, ok := sharedapi.DecodeSingleResponse[engine.Stats](t, rec.Body)
+	stats, ok := sharedapi.DecodeSingleResponse[ledgercontroller.Stats](t, rec.Body)
 	require.True(t, ok)
 
 	require.EqualValues(t, expectedStats, stats)
@@ -105,7 +104,7 @@ func TestGetLogs(t *testing.T) {
 		name              string
 		queryParams       url.Values
 		body              string
-		expectQuery       ledgerstore.PaginatedQueryOptions[any]
+		expectQuery       ledgercontroller.PaginatedQueryOptions[any]
 		expectStatusCode  int
 		expectedErrorCode string
 	}
@@ -114,25 +113,25 @@ func TestGetLogs(t *testing.T) {
 	testCases := []testCase{
 		{
 			name:        "nominal",
-			expectQuery: ledgerstore.NewPaginatedQueryOptions[any](nil),
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions[any](nil),
 		},
 		{
 			name:        "using start time",
 			body:        fmt.Sprintf(`{"$gte": {"date": "%s"}}`, now.Format(time.DateFormat)),
-			expectQuery: ledgerstore.NewPaginatedQueryOptions[any](nil).WithQueryBuilder(query.Gte("date", now.Format(time.DateFormat))),
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions[any](nil).WithQueryBuilder(query.Gte("date", now.Format(time.DateFormat))),
 		},
 		{
 			name: "using end time",
 			body: fmt.Sprintf(`{"$lt": {"date": "%s"}}`, now.Format(time.DateFormat)),
-			expectQuery: ledgerstore.NewPaginatedQueryOptions[any](nil).
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions[any](nil).
 				WithQueryBuilder(query.Lt("date", now.Format(time.DateFormat))),
 		},
 		{
 			name: "using empty cursor",
 			queryParams: url.Values{
-				"cursor": []string{bunpaginate.EncodeCursor(ledgerstore.NewGetLogsQuery(ledgerstore.NewPaginatedQueryOptions[any](nil)))},
+				"cursor": []string{bunpaginate.EncodeCursor(ledgercontroller.NewGetLogsQuery(ledgercontroller.NewPaginatedQueryOptions[any](nil)))},
 			},
-			expectQuery: ledgerstore.NewPaginatedQueryOptions[any](nil),
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions[any](nil),
 		},
 		{
 			name: "using invalid cursor",
@@ -153,7 +152,7 @@ func TestGetLogs(t *testing.T) {
 
 			expectedCursor := bunpaginate.Cursor[ledger.ChainedLog]{
 				Data: []ledger.ChainedLog{
-					*ledger.NewTransactionLog(ledger.NewTransaction(), map[string]metadata.Metadata{}).
+					ledger.NewTransactionLog(ledger.NewTransaction(), map[string]metadata.Metadata{}).
 						ChainLog(nil),
 				},
 			}
@@ -161,7 +160,7 @@ func TestGetLogs(t *testing.T) {
 			backend, mockLedger := newTestingBackend(t, true)
 			if testCase.expectStatusCode < 300 && testCase.expectStatusCode >= 200 {
 				mockLedger.EXPECT().
-					GetLogs(gomock.Any(), ledgerstore.NewGetLogsQuery(testCase.expectQuery)).
+					GetLogs(gomock.Any(), ledgercontroller.NewGetLogsQuery(testCase.expectQuery)).
 					Return(&expectedCursor, nil)
 			}
 

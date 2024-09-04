@@ -29,7 +29,7 @@ type parseVisitor struct {
 
 	// The sources accounts that aren't unbounded
 	// that is, @world or sources that appear within a
-	// '.. allowing unboundeed overdraft' clause
+	// '.. allowing unbounded overdraft' clause
 	writeLockAccounts map[machine.Address]struct{}
 
 	// all the accounts that appear in either the destination

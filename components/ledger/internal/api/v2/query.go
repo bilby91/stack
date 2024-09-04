@@ -1,13 +1,13 @@
 package v2
 
 import (
+	"github.com/formancehq/ledger/internal/controller/ledger/writer"
 	"net/http"
 	"strings"
 
 	"github.com/formancehq/stack/libs/go-libs/api"
 	"github.com/formancehq/stack/libs/go-libs/bun/bunpaginate"
 
-	"github.com/formancehq/ledger/internal/engine/command"
 	"github.com/pkg/errors"
 )
 
@@ -25,11 +25,11 @@ var (
 	ErrInvalidEndTime   = errors.New("invalid 'endTime' query param")
 )
 
-func getCommandParameters(r *http.Request) command.Parameters {
+func getCommandParameters(r *http.Request) writer.Parameters {
 	dryRunAsString := r.URL.Query().Get("dryRun")
 	dryRun := strings.ToUpper(dryRunAsString) == "YES" || strings.ToUpper(dryRunAsString) == "TRUE" || dryRunAsString == "1"
 
-	return command.Parameters{
+	return writer.Parameters{
 		DryRun:         dryRun,
 		IdempotencyKey: api.IdempotencyKeyFromRequest(r),
 	}

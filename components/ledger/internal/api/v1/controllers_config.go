@@ -3,11 +3,12 @@ package v1
 import (
 	"context"
 	_ "embed"
+	ledger "github.com/formancehq/ledger/internal"
+	systemcontroller "github.com/formancehq/ledger/internal/controller/system"
 	"net/http"
 
 	"github.com/formancehq/stack/libs/go-libs/bun/bunpaginate"
 
-	"github.com/formancehq/ledger/internal/storage/systemstore"
 	"github.com/formancehq/stack/libs/go-libs/collectionutils"
 
 	"github.com/formancehq/ledger/internal/api/backend"
@@ -33,12 +34,12 @@ func getInfo(backend backend.Backend) func(w http.ResponseWriter, r *http.Reques
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		ledgerNames := make([]string, 0)
-		if err := bunpaginate.Iterate(r.Context(), systemstore.NewListLedgersQuery(100),
-			func(ctx context.Context, q systemstore.ListLedgersQuery) (*bunpaginate.Cursor[systemstore.Ledger], error) {
+		if err := bunpaginate.Iterate(r.Context(), systemcontroller.NewListLedgersQuery(100),
+			func(ctx context.Context, q systemcontroller.ListLedgersQuery) (*bunpaginate.Cursor[ledger.Ledger], error) {
 				return backend.ListLedgers(ctx, q)
 			},
-			func(cursor *bunpaginate.Cursor[systemstore.Ledger]) error {
-				ledgerNames = append(ledgerNames, collectionutils.Map(cursor.Data, func(from systemstore.Ledger) string {
+			func(cursor *bunpaginate.Cursor[ledger.Ledger]) error {
+				ledgerNames = append(ledgerNames, collectionutils.Map(cursor.Data, func(from ledger.Ledger) string {
 					return from.Name
 				})...)
 				return nil

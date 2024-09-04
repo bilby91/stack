@@ -1,9 +1,10 @@
 package ledger
 
 import (
-	"math/big"
-
+	"github.com/formancehq/stack/libs/go-libs/collectionutils"
 	"github.com/formancehq/stack/libs/go-libs/time"
+	"slices"
+	"sort"
 
 	"github.com/formancehq/stack/libs/go-libs/pointer"
 
@@ -21,15 +22,16 @@ type Transactions struct {
 }
 
 type TransactionData struct {
-	Postings  Postings          `json:"postings"`
-	Metadata  metadata.Metadata `json:"metadata"`
-	Timestamp time.Time         `json:"timestamp"`
-	Reference string            `json:"reference,omitempty"`
+	Postings   Postings          `json:"postings"`
+	Metadata   metadata.Metadata `json:"metadata"`
+	Timestamp  time.Time         `json:"timestamp"`
+	Reference  string            `json:"reference,omitempty"`
+	InsertedAt time.Time         `json:"insertedAt,omitempty"`
 }
 
-func (d TransactionData) WithPostings(postings ...Posting) TransactionData {
-	d.Postings = append(d.Postings, postings...)
-	return d
+func (data TransactionData) WithPostings(postings ...Posting) TransactionData {
+	data.Postings = append(data.Postings, postings...)
+	return data
 }
 
 func NewTransactionData() TransactionData {
@@ -38,61 +40,100 @@ func NewTransactionData() TransactionData {
 	}
 }
 
-func (t *TransactionData) Reverse() TransactionData {
-	postings := make(Postings, len(t.Postings))
-	copy(postings, t.Postings)
-	postings.Reverse()
-
-	return TransactionData{
-		Postings: postings,
+func (data TransactionData) Reverse(atEffectiveDate bool) TransactionData {
+	ret := NewTransactionData().WithPostings(data.Postings.Reverse()...)
+	if atEffectiveDate {
+		ret = ret.WithDate(data.Timestamp)
 	}
+
+	return ret
 }
 
-func (d TransactionData) WithDate(now time.Time) TransactionData {
-	d.Timestamp = now
+func (data TransactionData) WithDate(now time.Time) TransactionData {
+	data.Timestamp = now
 
-	return d
+	return data
+}
+
+func (data TransactionData) WithReference(ref string) TransactionData {
+	data.Reference = ref
+
+	return data
+}
+
+func (data TransactionData) WithInsertedAt(date time.Time) TransactionData {
+	data.InsertedAt = date
+
+	return data
+}
+
+func (data TransactionData) WithMetadata(m metadata.Metadata) TransactionData {
+	data.Metadata = m
+
+	return data
 }
 
 type Transaction struct {
 	TransactionData
-	ID       *big.Int `json:"id"`
-	Reverted bool     `json:"reverted"`
+	ID       int  `json:"id"`
+	Reverted bool `json:"reverted"`
+	Seq      int  `json:"-"`
 }
 
-func (t *Transaction) WithPostings(postings ...Posting) *Transaction {
+func (t Transaction) WithPostings(postings ...Posting) Transaction {
 	t.TransactionData = t.TransactionData.WithPostings(postings...)
 	return t
 }
 
-func (t *Transaction) WithReference(ref string) *Transaction {
+func (t Transaction) WithReference(ref string) Transaction {
 	t.Reference = ref
 	return t
 }
 
-func (t *Transaction) WithDate(ts time.Time) *Transaction {
+func (t Transaction) WithDate(ts time.Time) Transaction {
 	t.Timestamp = ts
 	return t
 }
 
-func (t *Transaction) WithIDUint64(id uint64) *Transaction {
-	t.ID = big.NewInt(int64(id))
-	return t
-}
-
-func (t *Transaction) WithID(id *big.Int) *Transaction {
+func (t Transaction) WithID(id int) Transaction {
 	t.ID = id
 	return t
 }
 
-func (t *Transaction) WithMetadata(m metadata.Metadata) *Transaction {
+func (t Transaction) WithMetadata(m metadata.Metadata) Transaction {
 	t.Metadata = m
 	return t
 }
 
-func NewTransaction() *Transaction {
-	return &Transaction{
-		ID: big.NewInt(0),
+func (t Transaction) GetMoves() Moves {
+	ret := make([]Move, 0)
+	for _, p := range t.Postings {
+		ret = append(ret, []Move{
+			{
+				IsSource:       true,
+				Account:        p.Source,
+				Amount:         p.Amount,
+				Asset:          p.Asset,
+				InsertedAt:     t.InsertedAt,
+				EffectiveDate:  t.Timestamp,
+				TransactionSeq: t.Seq,
+			},
+			{
+				IsSource:       false,
+				Account:        p.Destination,
+				Amount:         p.Amount,
+				Asset:          p.Asset,
+				InsertedAt:     t.InsertedAt,
+				EffectiveDate:  t.Timestamp,
+				TransactionSeq: t.Seq,
+			},
+		}...)
+	}
+	return ret
+}
+
+func NewTransaction() Transaction {
+	return Transaction{
 		TransactionData: NewTransactionData().
 			WithDate(time.Now()),
 	}
@@ -106,7 +147,11 @@ type ExpandedTransaction struct {
 	PostCommitEffectiveVolumes AccountsAssetsVolumes `json:"postCommitEffectiveVolumes,omitempty"`
 }
 
-func (t *ExpandedTransaction) AppendPosting(p Posting) {
+func (t ExpandedTransaction) Base() Transaction {
+	return t.Transaction
+}
+
+func (t ExpandedTransaction) AppendPosting(p Posting) {
 	t.Postings = append(t.Postings, p)
 }
 
@@ -152,4 +197,16 @@ func (req *TransactionRequest) ToRunScript() *RunScript {
 		Reference: req.Reference,
 		Metadata:  req.Metadata,
 	}
+}
+
+type Moves []Move
+
+func (m Moves) InvolvedAccounts() []string {
+	accounts := collectionutils.Map(m, func(from Move) string {
+		return from.Account
+	})
+	sort.Strings(accounts)
+	slices.Compact(accounts)
+
+	return accounts
 }

@@ -2,6 +2,7 @@ package v2
 
 import (
 	"encoding/json"
+	systemcontroller "github.com/formancehq/ledger/internal/controller/system"
 	"net/http"
 
 	"github.com/formancehq/stack/libs/go-libs/metadata"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/formancehq/stack/libs/go-libs/bun/bunpaginate"
 
-	"github.com/formancehq/ledger/internal/storage/systemstore"
 	sharedapi "github.com/formancehq/stack/libs/go-libs/api"
 
 	"github.com/formancehq/ledger/internal/api/backend"
@@ -21,13 +21,13 @@ import (
 func listLedgers(b backend.Backend) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		query, err := bunpaginate.Extract[systemstore.ListLedgersQuery](r, func() (*systemstore.ListLedgersQuery, error) {
+		query, err := bunpaginate.Extract[systemcontroller.ListLedgersQuery](r, func() (*systemcontroller.ListLedgersQuery, error) {
 			pageSize, err := bunpaginate.GetPageSize(r)
 			if err != nil {
 				return nil, err
 			}
 
-			return pointer.For(systemstore.NewListLedgersQuery(pageSize)), nil
+			return pointer.For(systemcontroller.NewListLedgersQuery(pageSize)), nil
 		})
 		if err != nil {
 			sharedapi.BadRequest(w, ErrValidation, err)

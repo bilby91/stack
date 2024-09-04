@@ -3,6 +3,8 @@ package v1
 import (
 	"encoding/json"
 	"fmt"
+	ledgercontroller "github.com/formancehq/ledger/internal/controller/ledger"
+	"github.com/formancehq/stack/libs/go-libs/platform/postgres"
 	"math/big"
 	"net/http"
 	"strconv"
@@ -16,14 +18,9 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/formancehq/ledger/internal/api/backend"
-	"github.com/formancehq/ledger/internal/engine"
-	"github.com/formancehq/ledger/internal/engine/command"
-	"github.com/formancehq/ledger/internal/machine"
-	storageerrors "github.com/formancehq/ledger/internal/storage/sqlutils"
 	"github.com/pkg/errors"
 
 	ledger "github.com/formancehq/ledger/internal"
-	"github.com/formancehq/ledger/internal/storage/ledgerstore"
 	sharedapi "github.com/formancehq/stack/libs/go-libs/api"
 	"github.com/formancehq/stack/libs/go-libs/collectionutils"
 	"github.com/formancehq/stack/libs/go-libs/metadata"
@@ -33,8 +30,8 @@ import (
 func mapTransactionToV1(tx ledger.Transaction) any {
 	return struct {
 		ledger.Transaction
-		TxID *big.Int `json:"txid"`
-		ID   *big.Int `json:"-"`
+		TxID int `json:"txid"`
+		ID   int `json:"-"`
 	}{
 		Transaction: tx,
 		TxID:        tx.ID,
@@ -44,8 +41,8 @@ func mapTransactionToV1(tx ledger.Transaction) any {
 func mapExpandedTransactionToV1(tx ledger.ExpandedTransaction) any {
 	return struct {
 		ledger.ExpandedTransaction
-		TxID *big.Int `json:"txid"`
-		ID   *big.Int `json:"-"`
+		TxID int `json:"txid"`
+		ID   int `json:"-"`
 	}{
 		ExpandedTransaction: tx,
 		TxID:                tx.ID,
@@ -107,7 +104,7 @@ func countTransactions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	count, err := backend.LedgerFromContext(r.Context()).
-		CountTransactions(r.Context(), ledgerstore.NewGetTransactionsQuery(*options))
+		CountTransactions(r.Context(), ledgercontroller.NewGetTransactionsQuery(*options))
 	if err != nil {
 		sharedapi.InternalServerError(w, r, err)
 		return
@@ -120,7 +117,7 @@ func countTransactions(w http.ResponseWriter, r *http.Request) {
 func getTransactions(w http.ResponseWriter, r *http.Request) {
 	l := backend.LedgerFromContext(r.Context())
 
-	query, err := bunpaginate.Extract[ledgerstore.GetTransactionsQuery](r, func() (*ledgerstore.GetTransactionsQuery, error) {
+	query, err := bunpaginate.Extract[ledgercontroller.GetTransactionsQuery](r, func() (*ledgercontroller.GetTransactionsQuery, error) {
 		options, err := getPaginatedQueryOptionsOfPITFilterWithVolumes(r)
 		if err != nil {
 			return nil, err
@@ -129,7 +126,7 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return nil, err
 		}
-		return pointer.For(ledgerstore.NewGetTransactionsQuery(*options)), nil
+		return pointer.For(ledgercontroller.NewGetTransactionsQuery(*options)), nil
 	})
 	if err != nil {
 		sharedapi.BadRequest(w, ErrValidation, err)
@@ -215,24 +212,25 @@ func postTransaction(w http.ResponseWriter, r *http.Request) {
 		res, err := l.CreateTransaction(r.Context(), getCommandParameters(r), ledger.TxToScriptData(txData, false))
 		if err != nil {
 			switch {
-			case engine.IsCommandError(err):
-				switch {
-				case command.IsErrMachine(err):
-					switch {
-					case machine.IsInsufficientFundError(err):
-						sharedapi.BadRequest(w, ErrInsufficientFund, err)
-						return
-					case machine.IsMetadataOverride(err):
-						sharedapi.BadRequest(w, ErrScriptMetadataOverride, err)
-						return
-					}
-				case command.IsInvalidTransactionError(err, command.ErrInvalidTransactionCodeConflict):
-					sharedapi.BadRequest(w, ErrConflict, err)
-					return
-				case command.IsInvalidTransactionError(err, command.ErrInvalidTransactionCodeCompilationFailed):
-					sharedapi.BadRequestWithDetails(w, ErrScriptCompilationFailed, err, backend.EncodeLink(err.Error()))
-					return
-				}
+			case ledgercontroller.IsCommandError(err):
+				//switch {
+				// todo: handle errors
+				//case command.IsErrMachine(err):
+				//	switch {
+				//	case machine.IsInsufficientFundError(err):
+				//		sharedapi.BadRequest(w, ErrInsufficientFund, err)
+				//		return
+				//	case machine.IsMetadataOverride(err):
+				//		sharedapi.BadRequest(w, ErrScriptMetadataOverride, err)
+				//		return
+				//	}
+				//case command.IsInvalidTransactionError(err, command.ErrInvalidTransactionCodeConflict):
+				//	sharedapi.BadRequest(w, ErrConflict, err)
+				//	return
+				//case command.IsInvalidTransactionError(err, command.ErrInvalidTransactionCodeCompilationFailed):
+				//	sharedapi.BadRequestWithDetails(w, ErrScriptCompilationFailed, err, backend.EncodeLink(err.Error()))
+				//	return
+				//}
 				sharedapi.BadRequest(w, ErrValidation, err)
 				return
 			}
@@ -260,21 +258,21 @@ func postTransaction(w http.ResponseWriter, r *http.Request) {
 	res, err := l.CreateTransaction(r.Context(), getCommandParameters(r), runScript)
 	if err != nil {
 		switch {
-		case engine.IsCommandError(err):
-			switch {
-			case command.IsErrMachine(err):
-				switch {
-				case machine.IsInsufficientFundError(err):
-					sharedapi.BadRequest(w, ErrInsufficientFund, err)
-					return
-				}
-			case command.IsInvalidTransactionError(err, command.ErrInvalidTransactionCodeConflict):
-				sharedapi.BadRequest(w, ErrConflict, err)
-				return
-			case command.IsInvalidTransactionError(err, command.ErrInvalidTransactionCodeCompilationFailed):
-				sharedapi.BadRequestWithDetails(w, ErrScriptCompilationFailed, err, backend.EncodeLink(err.Error()))
-				return
-			}
+		case ledgercontroller.IsCommandError(err):
+			//switch {
+			//case command.IsErrMachine(err):
+			//	switch {
+			//	case machine.IsInsufficientFundError(err):
+			//		sharedapi.BadRequest(w, ErrInsufficientFund, err)
+			//		return
+			//	}
+			//case command.IsInvalidTransactionError(err, command.ErrInvalidTransactionCodeConflict):
+			//	sharedapi.BadRequest(w, ErrConflict, err)
+			//	return
+			//case command.IsInvalidTransactionError(err, command.ErrInvalidTransactionCodeCompilationFailed):
+			//	sharedapi.BadRequestWithDetails(w, ErrScriptCompilationFailed, err, backend.EncodeLink(err.Error()))
+			//	return
+			//}
 			sharedapi.BadRequest(w, ErrValidation, err)
 			return
 		}
@@ -288,13 +286,13 @@ func postTransaction(w http.ResponseWriter, r *http.Request) {
 func getTransaction(w http.ResponseWriter, r *http.Request) {
 	l := backend.LedgerFromContext(r.Context())
 
-	txId, ok := big.NewInt(0).SetString(chi.URLParam(r, "id"), 10)
-	if !ok {
-		sharedapi.BadRequest(w, ErrValidation, errors.New("invalid transaction ID"))
+	txId, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		sharedapi.BadRequest(w, ErrValidation, err)
 		return
 	}
 
-	query := ledgerstore.NewGetTransactionQuery(txId)
+	query := ledgercontroller.NewGetTransactionQuery(int(txId))
 	if collectionutils.Contains(r.URL.Query()["expand"], "volumes") {
 		query = query.WithExpandVolumes()
 	}
@@ -305,7 +303,7 @@ func getTransaction(w http.ResponseWriter, r *http.Request) {
 	tx, err := l.GetTransactionWithVolumes(r.Context(), query)
 	if err != nil {
 		switch {
-		case storageerrors.IsNotFoundError(err):
+		case postgres.IsNotFoundError(err):
 			sharedapi.NotFound(w, err)
 		default:
 			sharedapi.InternalServerError(w, r, err)
@@ -319,31 +317,31 @@ func getTransaction(w http.ResponseWriter, r *http.Request) {
 func revertTransaction(w http.ResponseWriter, r *http.Request) {
 	l := backend.LedgerFromContext(r.Context())
 
-	transactionID, ok := big.NewInt(0).SetString(chi.URLParam(r, "id"), 10)
-	if !ok {
-		sharedapi.NotFound(w, errors.New("invalid transaction ID"))
+	txId, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		sharedapi.BadRequest(w, ErrValidation, err)
 		return
 	}
 
-	tx, err := l.RevertTransaction(r.Context(), getCommandParameters(r), transactionID,
+	tx, err := l.RevertTransaction(r.Context(), getCommandParameters(r), int(txId),
 		sharedapi.QueryParamBool(r, "disableChecks"), false)
 	if err != nil {
-		switch {
-		case engine.IsCommandError(err):
-			switch {
-			case command.IsErrMachine(err):
-				switch {
-				case machine.IsInsufficientFundError(err):
-					sharedapi.BadRequest(w, ErrInsufficientFund, err)
-					return
-				}
-			case command.IsRevertError(err, command.ErrRevertTransactionCodeNotFound):
-				sharedapi.NotFound(w, err)
-				return
-			}
-			sharedapi.BadRequest(w, ErrValidation, err)
-			return
-		}
+		//switch {
+		//case engine.IsCommandError(err):
+		//	switch {
+		//	case command.IsErrMachine(err):
+		//		switch {
+		//		case machine.IsInsufficientFundError(err):
+		//			sharedapi.BadRequest(w, ErrInsufficientFund, err)
+		//			return
+		//		}
+		//	case command.IsRevertError(err, command.ErrRevertTransactionCodeNotFound):
+		//		sharedapi.NotFound(w, err)
+		//		return
+		//	}
+		//	sharedapi.BadRequest(w, ErrValidation, err)
+		//	return
+		//}
 		sharedapi.InternalServerError(w, r, err)
 		return
 	}
@@ -368,8 +366,8 @@ func postTransactionMetadata(w http.ResponseWriter, r *http.Request) {
 
 	if err := l.SaveMeta(r.Context(), getCommandParameters(r), ledger.MetaTargetTypeTransaction, txID, m); err != nil {
 		switch {
-		case command.IsSaveMetaError(err, command.ErrSaveMetaCodeTransactionNotFound):
-			sharedapi.NotFound(w, err)
+		//case command.IsSaveMetaError(err, command.ErrSaveMetaCodeTransactionNotFound):
+		//	sharedapi.NotFound(w, err)
 		default:
 			sharedapi.InternalServerError(w, r, err)
 		}
@@ -392,8 +390,8 @@ func deleteTransactionMetadata(w http.ResponseWriter, r *http.Request) {
 
 	if err := l.DeleteMetadata(r.Context(), getCommandParameters(r), ledger.MetaTargetTypeTransaction, transactionID, metadataKey); err != nil {
 		switch {
-		case command.IsSaveMetaError(err, command.ErrSaveMetaCodeTransactionNotFound):
-			sharedapi.NotFound(w, err)
+		//case command.IsSaveMetaError(err, command.ErrSaveMetaCodeTransactionNotFound):
+		//	sharedapi.NotFound(w, err)
 		default:
 			sharedapi.InternalServerError(w, r, err)
 		}

@@ -1,13 +1,13 @@
 package backend
 
 import (
+	"github.com/formancehq/stack/libs/go-libs/collectionutils"
+	"github.com/formancehq/stack/libs/go-libs/platform/postgres"
 	"math/rand"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/formancehq/ledger/internal/storage/sqlutils"
 
 	sharedapi "github.com/formancehq/stack/libs/go-libs/api"
 
@@ -48,6 +48,11 @@ func LedgerMiddleware(
 	resolver Backend,
 	excludePathFromSchemaCheck []string,
 ) func(handler http.Handler) http.Handler {
+
+	mu := sync.RWMutex{}
+	ledgers := make(map[string]Ledger, 0)
+	upToDateLedgers := collectionutils.Set[string]{}
+
 	return func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			name := chi.URLParam(r, "ledger")
@@ -72,42 +77,65 @@ func LedgerMiddleware(
 
 			r = r.WithContext(logging.ContextWithFields(r.Context(), loggerFields))
 
-			l, err := resolver.GetLedgerEngine(r.Context(), name)
-			if err != nil {
-				switch {
-				case sqlutils.IsNotFoundError(err):
-					sharedapi.WriteErrorResponse(w, http.StatusNotFound, "LEDGER_NOT_FOUND", err)
-				default:
-					sharedapi.InternalServerError(w, r, err)
-				}
-				return
-			}
+			var (
+				l  Ledger
+				ok bool
+			)
 
-			pathWithoutLedger := r.URL.Path[1:]
-			nextSlash := strings.Index(pathWithoutLedger, "/")
-			if nextSlash >= 0 {
-				pathWithoutLedger = pathWithoutLedger[nextSlash:]
+			mu.RLock()
+			if l, ok = ledgers[name]; ok {
+				mu.RUnlock()
 			} else {
-				pathWithoutLedger = ""
-			}
-
-			excluded := false
-			for _, path := range excludePathFromSchemaCheck {
-				if pathWithoutLedger == path {
-					excluded = true
-					break
+				mu.RUnlock()
+				mu.Lock()
+				if l, ok = ledgers[name]; ok {
+					mu.Unlock()
+				} else {
+					var err error
+					l, err = resolver.GetLedgerController(r.Context(), name)
+					if err != nil {
+						switch {
+						case postgres.IsNotFoundError(err):
+							sharedapi.WriteErrorResponse(w, http.StatusNotFound, "LEDGER_NOT_FOUND", err)
+						default:
+							sharedapi.InternalServerError(w, r, err)
+						}
+						return
+					}
+					ledgers[name] = l
+					mu.Unlock()
 				}
-			}
 
-			if !excluded {
-				isUpToDate, err := l.IsDatabaseUpToDate(ctx)
-				if err != nil {
-					sharedapi.BadRequest(w, sharedapi.ErrorInternal, err)
-					return
-				}
-				if !isUpToDate {
-					sharedapi.BadRequest(w, ErrOutdatedSchema, errors.New("You need to upgrade your ledger schema to the last version"))
-					return
+				if !upToDateLedgers.Contains(name) {
+					pathWithoutLedger := r.URL.Path[1:]
+					nextSlash := strings.Index(pathWithoutLedger, "/")
+					if nextSlash >= 0 {
+						pathWithoutLedger = pathWithoutLedger[nextSlash:]
+					} else {
+						pathWithoutLedger = ""
+					}
+
+					excluded := false
+					for _, path := range excludePathFromSchemaCheck {
+						if pathWithoutLedger == path {
+							excluded = true
+							break
+						}
+					}
+
+					if !excluded {
+						isUpToDate, err := l.IsDatabaseUpToDate(ctx)
+						if err != nil {
+							sharedapi.BadRequest(w, sharedapi.ErrorInternal, err)
+							return
+						}
+						if !isUpToDate {
+							sharedapi.BadRequest(w, ErrOutdatedSchema, errors.New("You need to upgrade your ledger schema to the last version"))
+							return
+						}
+
+						upToDateLedgers.Put(name)
+					}
 				}
 			}
 

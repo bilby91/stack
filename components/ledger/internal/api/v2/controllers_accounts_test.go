@@ -2,6 +2,8 @@ package v2_test
 
 import (
 	"bytes"
+	ledgercontroller "github.com/formancehq/ledger/internal/controller/ledger"
+	"github.com/formancehq/ledger/internal/controller/ledger/writer"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -14,9 +16,7 @@ import (
 
 	ledger "github.com/formancehq/ledger/internal"
 	v2 "github.com/formancehq/ledger/internal/api/v2"
-	"github.com/formancehq/ledger/internal/engine/command"
 	"github.com/formancehq/ledger/internal/opentelemetry/metrics"
-	"github.com/formancehq/ledger/internal/storage/ledgerstore"
 	sharedapi "github.com/formancehq/stack/libs/go-libs/api"
 	"github.com/formancehq/stack/libs/go-libs/metadata"
 	"github.com/formancehq/stack/libs/go-libs/query"
@@ -31,7 +31,7 @@ func TestGetAccounts(t *testing.T) {
 		name              string
 		queryParams       url.Values
 		body              string
-		expectQuery       ledgerstore.PaginatedQueryOptions[ledgerstore.PITFilterWithVolumes]
+		expectQuery       ledgercontroller.PaginatedQueryOptions[ledgercontroller.PITFilterWithVolumes]
 		expectStatusCode  int
 		expectedErrorCode string
 	}
@@ -40,8 +40,8 @@ func TestGetAccounts(t *testing.T) {
 	testCases := []testCase{
 		{
 			name: "nominal",
-			expectQuery: ledgerstore.NewPaginatedQueryOptions(ledgerstore.PITFilterWithVolumes{
-				PITFilter: ledgerstore.PITFilter{
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions(ledgercontroller.PITFilterWithVolumes{
+				PITFilter: ledgercontroller.PITFilter{
 					PIT: &before,
 				},
 			}).
@@ -50,8 +50,8 @@ func TestGetAccounts(t *testing.T) {
 		{
 			name: "using metadata",
 			body: `{"$match": { "metadata[roles]": "admin" }}`,
-			expectQuery: ledgerstore.NewPaginatedQueryOptions(ledgerstore.PITFilterWithVolumes{
-				PITFilter: ledgerstore.PITFilter{
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions(ledgercontroller.PITFilterWithVolumes{
+				PITFilter: ledgercontroller.PITFilter{
 					PIT: &before,
 				},
 			}).
@@ -61,8 +61,8 @@ func TestGetAccounts(t *testing.T) {
 		{
 			name: "using address",
 			body: `{"$match": { "address": "foo" }}`,
-			expectQuery: ledgerstore.NewPaginatedQueryOptions(ledgerstore.PITFilterWithVolumes{
-				PITFilter: ledgerstore.PITFilter{
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions(ledgercontroller.PITFilterWithVolumes{
+				PITFilter: ledgercontroller.PITFilter{
 					PIT: &before,
 				},
 			}).
@@ -72,9 +72,9 @@ func TestGetAccounts(t *testing.T) {
 		{
 			name: "using empty cursor",
 			queryParams: url.Values{
-				"cursor": []string{bunpaginate.EncodeCursor(ledgerstore.NewGetAccountsQuery(ledgerstore.NewPaginatedQueryOptions(ledgerstore.PITFilterWithVolumes{})))},
+				"cursor": []string{bunpaginate.EncodeCursor(ledgercontroller.NewGetAccountsQuery(ledgercontroller.NewPaginatedQueryOptions(ledgercontroller.PITFilterWithVolumes{})))},
 			},
-			expectQuery: ledgerstore.NewPaginatedQueryOptions(ledgerstore.PITFilterWithVolumes{}),
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions(ledgercontroller.PITFilterWithVolumes{}),
 		},
 		{
 			name: "using invalid cursor",
@@ -97,8 +97,8 @@ func TestGetAccounts(t *testing.T) {
 			queryParams: url.Values{
 				"pageSize": []string{"1000000"},
 			},
-			expectQuery: ledgerstore.NewPaginatedQueryOptions(ledgerstore.PITFilterWithVolumes{
-				PITFilter: ledgerstore.PITFilter{
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions(ledgercontroller.PITFilterWithVolumes{
+				PITFilter: ledgercontroller.PITFilter{
 					PIT: &before,
 				},
 			}).
@@ -107,8 +107,8 @@ func TestGetAccounts(t *testing.T) {
 		{
 			name: "using balance filter",
 			body: `{"$lt": { "balance[USD/2]": 100 }}`,
-			expectQuery: ledgerstore.NewPaginatedQueryOptions(ledgerstore.PITFilterWithVolumes{
-				PITFilter: ledgerstore.PITFilter{
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions(ledgercontroller.PITFilterWithVolumes{
+				PITFilter: ledgercontroller.PITFilter{
 					PIT: &before,
 				},
 			}).
@@ -118,8 +118,8 @@ func TestGetAccounts(t *testing.T) {
 		{
 			name: "using exists filter",
 			body: `{"$exists": { "metadata": "foo" }}`,
-			expectQuery: ledgerstore.NewPaginatedQueryOptions(ledgerstore.PITFilterWithVolumes{
-				PITFilter: ledgerstore.PITFilter{
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions(ledgercontroller.PITFilterWithVolumes{
+				PITFilter: ledgercontroller.PITFilter{
 					PIT: &before,
 				},
 			}).
@@ -155,7 +155,7 @@ func TestGetAccounts(t *testing.T) {
 			backend, mockLedger := newTestingBackend(t, true)
 			if testCase.expectStatusCode < 300 && testCase.expectStatusCode >= 200 {
 				mockLedger.EXPECT().
-					GetAccountsWithVolumes(gomock.Any(), ledgerstore.NewGetAccountsQuery(testCase.expectQuery)).
+					GetAccountsWithVolumes(gomock.Any(), ledgercontroller.NewGetAccountsQuery(testCase.expectQuery)).
 					Return(&expectedCursor, nil)
 			}
 
@@ -196,7 +196,7 @@ func TestGetAccount(t *testing.T) {
 	}
 
 	now := time.Now()
-	query := ledgerstore.NewGetAccountQuery("foo")
+	query := ledgercontroller.NewGetAccountQuery("foo")
 	query.PIT = &now
 
 	backend, mock := newTestingBackend(t, true)
@@ -227,7 +227,7 @@ func TestGetAccountWithEncoded(t *testing.T) {
 	}
 
 	now := time.Now()
-	query := ledgerstore.NewGetAccountQuery("foo:bar")
+	query := ledgercontroller.NewGetAccountQuery("foo:bar")
 	query.PIT = &now
 
 	backend, mock := newTestingBackend(t, true)
@@ -300,7 +300,7 @@ func TestPostAccountMetadata(t *testing.T) {
 			backend, mock := newTestingBackend(t, true)
 			if testCase.expectStatusCode == http.StatusNoContent {
 				mock.EXPECT().
-					SaveMeta(gomock.Any(), command.Parameters{}, ledger.MetaTargetTypeAccount, testCase.account, testCase.body).
+					SaveMeta(gomock.Any(), writer.Parameters{}, ledger.MetaTargetTypeAccount, testCase.account, testCase.body).
 					Return(nil)
 			}
 

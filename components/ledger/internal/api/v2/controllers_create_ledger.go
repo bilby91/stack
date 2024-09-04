@@ -2,6 +2,7 @@ package v2
 
 import (
 	"encoding/json"
+	ledger "github.com/formancehq/ledger/internal"
 	"io"
 	"net/http"
 
@@ -15,7 +16,7 @@ import (
 
 func createLedger(b backend.Backend) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		configuration := driver.LedgerConfiguration{}
+		configuration := ledger.Configuration{}
 
 		data, err := io.ReadAll(r.Body)
 		if err != nil && !errors.Is(err, io.EOF) {

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
+	"github.com/uptrace/opentelemetry-go-extra/otelsql"
 	"net/url"
 	"time"
 
@@ -35,7 +36,7 @@ func OpenSQLDB(ctx context.Context, options ConnectionOptions, hooks ...bun.Quer
 	)
 	if options.Connector == nil {
 		logging.FromContext(ctx).Debugf("Opening database with default connector and dsn: '%s'", options.DatabaseSourceName)
-		sqldb, err = sql.Open("postgres", options.DatabaseSourceName)
+		sqldb, err = otelsql.Open("postgres", options.DatabaseSourceName)
 		if err != nil {
 			return nil, err
 		}
@@ -45,7 +46,7 @@ func OpenSQLDB(ctx context.Context, options ConnectionOptions, hooks ...bun.Quer
 		if err != nil {
 			return nil, err
 		}
-		sqldb = sql.OpenDB(connector)
+		sqldb = otelsql.OpenDB(connector)
 	}
 	sqldb.SetMaxIdleConns(options.MaxIdleConns)
 	if options.ConnMaxIdleTime != 0 {
@@ -56,7 +57,7 @@ func OpenSQLDB(ctx context.Context, options ConnectionOptions, hooks ...bun.Quer
 	}
 
 	db := bun.NewDB(sqldb, pgdialect.New(), bun.WithDiscardUnknownColumns())
-	db.AddQueryHook(bunotel.NewQueryHook())
+	db.AddQueryHook(bunotel.NewQueryHook(bunotel.WithFormattedQueries(true)))
 	for _, hook := range hooks {
 		db.AddQueryHook(hook)
 	}

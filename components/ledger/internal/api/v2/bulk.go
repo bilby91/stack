@@ -4,18 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/formancehq/ledger/internal/controller/ledger/writer"
 	"math/big"
 
 	"github.com/formancehq/ledger/internal/opentelemetry/tracer"
 
 	sharedapi "github.com/formancehq/stack/libs/go-libs/api"
 
-	"github.com/formancehq/ledger/internal/engine"
 	"github.com/formancehq/ledger/internal/machine"
 
 	ledger "github.com/formancehq/ledger/internal"
 	"github.com/formancehq/ledger/internal/api/backend"
-	"github.com/formancehq/ledger/internal/engine/command"
 	"github.com/formancehq/stack/libs/go-libs/metadata"
 )
 
@@ -60,7 +59,7 @@ func ProcessBulk(ctx context.Context, l backend.Ledger, bulk Bulk, continueOnFai
 	}
 
 	for i, element := range bulk {
-		parameters := command.Parameters{
+		parameters := writer.Parameters{
 			DryRun:         false,
 			IdempotencyKey: element.IdempotencyKey,
 		}
@@ -79,8 +78,9 @@ func ProcessBulk(ctx context.Context, l backend.Ledger, bulk Bulk, continueOnFai
 				switch {
 				case machine.IsInsufficientFundError(err):
 					code = ErrInsufficientFund
-				case engine.IsCommandError(err):
-					code = ErrValidation
+					// todo: handle errors
+				//case engine.IsCommandError(err):
+				//	code = ErrValidation
 				default:
 					code = sharedapi.ErrorInternal
 				}
@@ -119,8 +119,9 @@ func ProcessBulk(ctx context.Context, l backend.Ledger, bulk Bulk, continueOnFai
 			if err := l.SaveMeta(ctx, parameters, req.TargetType, targetID, req.Metadata); err != nil {
 				var code string
 				switch {
-				case command.IsSaveMetaError(err, command.ErrSaveMetaCodeTransactionNotFound):
-					code = sharedapi.ErrorCodeNotFound
+				// todo: handle errors
+				//case command.IsSaveMetaError(err, command.ErrSaveMetaCodeTransactionNotFound):
+				//	code = sharedapi.ErrorCodeNotFound
 				default:
 					code = sharedapi.ErrorInternal
 				}
@@ -135,7 +136,7 @@ func ProcessBulk(ctx context.Context, l backend.Ledger, bulk Bulk, continueOnFai
 			}
 		case ActionRevertTransaction:
 			type revertTransactionRequest struct {
-				ID              *big.Int `json:"id"`
+				ID              int `json:"id"`
 				Force           bool     `json:"force"`
 				AtEffectiveDate bool     `json:"atEffectiveDate"`
 			}
@@ -148,8 +149,9 @@ func ProcessBulk(ctx context.Context, l backend.Ledger, bulk Bulk, continueOnFai
 			if err != nil {
 				var code string
 				switch {
-				case engine.IsCommandError(err):
-					code = ErrValidation
+				// todo: handle errors
+				//case engine.IsCommandError(err):
+				//	code = ErrValidation
 				default:
 					code = sharedapi.ErrorInternal
 				}
@@ -189,8 +191,8 @@ func ProcessBulk(ctx context.Context, l backend.Ledger, bulk Bulk, continueOnFai
 			if err != nil {
 				var code string
 				switch {
-				case command.IsDeleteMetaError(err, command.ErrSaveMetaCodeTransactionNotFound):
-					code = sharedapi.ErrorCodeNotFound
+				//case command.IsDeleteMetaError(err, command.ErrSaveMetaCodeTransactionNotFound):
+				//	code = sharedapi.ErrorCodeNotFound
 				default:
 					code = sharedapi.ErrorInternal
 				}

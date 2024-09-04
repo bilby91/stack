@@ -1,6 +1,7 @@
 package v2_test
 
 import (
+	ledger "github.com/formancehq/ledger/internal"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,32 +13,30 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-
-	"github.com/formancehq/ledger/internal/storage/driver"
 )
 
 func TestConfigureLedger(t *testing.T) {
 	t.Parallel()
 
 	type testCase struct {
-		configuration driver.LedgerConfiguration
+		configuration ledger.Configuration
 		name          string
 	}
 
 	testCases := []testCase{
 		{
 			name:          "nominal",
-			configuration: driver.LedgerConfiguration{},
+			configuration: ledger.Configuration{},
 		},
 		{
 			name: "with alternative bucket",
-			configuration: driver.LedgerConfiguration{
+			configuration: ledger.Configuration{
 				Bucket: "bucket0",
 			},
 		},
 		{
 			name: "with metadata",
-			configuration: driver.LedgerConfiguration{
+			configuration: ledger.Configuration{
 				Metadata: map[string]string{
 					"foo": "bar",
 				},

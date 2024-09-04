@@ -2,7 +2,6 @@ package bunpaginate
 
 import (
 	"context"
-
 	"github.com/uptrace/bun"
 )
 
@@ -67,7 +66,7 @@ func usingOffset[Q any, T any](ctx context.Context, sb *bun.SelectQuery, query O
 }
 
 func UsingOffset[Q any, T any](ctx context.Context, sb *bun.SelectQuery, query OffsetPaginatedQuery[Q], builders ...func(query *bun.SelectQuery) *bun.SelectQuery) (*Cursor[T], error) {
-	return usingOffset[Q, T](ctx, sb, query, true, builders...)
+	return usingOffset[Q, T](ctx, sb, query, false, builders...)
 }
 
 func UsingOffsetWithoutModel[Q any, T any](ctx context.Context, sb *bun.SelectQuery, query OffsetPaginatedQuery[Q], builders ...func(query *bun.SelectQuery) *bun.SelectQuery) (*Cursor[T], error) {

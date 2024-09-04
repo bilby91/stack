@@ -1,6 +1,6 @@
 //go:build it
 
-package benchmarks
+package performance_test
 
 import (
 	"bytes"
@@ -9,43 +9,33 @@ import (
 	"github.com/formancehq/stack/ledger/client/models/components"
 	"github.com/formancehq/stack/libs/go-libs/logging"
 	"github.com/formancehq/stack/libs/go-libs/pointer"
-	"github.com/formancehq/stack/libs/go-libs/testing/docker"
-	"github.com/formancehq/stack/libs/go-libs/testing/platform/pgtesting"
-	"github.com/formancehq/stack/libs/go-libs/testing/utils"
 	"github.com/formancehq/stack/libs/go-libs/time"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"math/big"
+	"os"
 	"runtime"
 	"sync"
 	"sync/atomic"
 	"testing"
 )
 
-var (
-	dockerPool *docker.Pool
-	srv        *pgtesting.PostgresServer
-)
-
-func TestMain(m *testing.M) {
-	utils.WithTestMain(func(t *utils.TestingTForMain) int {
-		dockerPool = docker.NewPool(t, logging.Testing())
-		srv = pgtesting.CreatePostgresServer(t, dockerPool)
-
-		return m.Run()
-	})
-}
-
 func BenchmarkWorstCase(b *testing.B) {
 
-	db := srv.NewDatabase(b)
+	db := pgServer.NewDatabase(b)
 
 	ctx := logging.TestingContext()
 
 	ledgerName := uuid.NewString()
+	connectionOptions := db.ConnectionOptions()
+	connectionOptions.MaxOpenConns = 20
+	connectionOptions.MaxIdleConns = 20
+	connectionOptions.ConnMaxIdleTime = time.Minute
+
 	testServer := testserver.New(b, testserver.Configuration{
-		PostgresConfiguration: db.ConnectionOptions(),
+		PostgresConfiguration: connectionOptions,
 		Debug:                 testing.Verbose(),
+		Output:                os.Stdout,
 	})
 	testServer.Start()
 	defer testServer.Stop()
@@ -54,7 +44,6 @@ func BenchmarkWorstCase(b *testing.B) {
 	require.NoError(b, err)
 
 	totalDuration := atomic.Int64{}
-	b.SetParallelism(1000)
 	runtime.GC()
 	b.ResetTimer()
 	startOfBench := time.Now()
@@ -91,9 +80,8 @@ send [USD/2 100] (
 				Metadata:  nil,
 			}, pointer.For(false), nil)
 			if err != nil {
-				return
+				continue
 			}
-			require.NoError(b, err)
 
 			latency := time.Since(now).Milliseconds()
 			totalDuration.Add(latency)

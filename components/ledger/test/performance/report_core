@@ -1,0 +1,10 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/formancehq/ledger/test/performance
+BenchmarkWrite/not_existing_source_to_not_existing_destination/core    	     249	   4829740 ns/op	         6.000 ms/transaction	       112.3 t/s	  109587 B/op	    1427 allocs/op
+--- BENCH: BenchmarkWrite/not_existing_source_to_not_existing_destination/core
+    write_test.go:149: Longest transaction: 1 (10.346ms)
+    write_test.go:149: Longest transaction: 73 (12.042084ms)
+    write_test.go:149: Longest transaction: 186 (20.362958ms)
+PASS
+ok  	github.com/formancehq/ledger/test/performance	6.236s

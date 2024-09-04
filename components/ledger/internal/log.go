@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
-	"math/big"
 	"reflect"
 	"strconv"
 	"strings"
@@ -79,12 +78,12 @@ type ChainedLogWithContext struct {
 
 type ChainedLog struct {
 	Log
-	ID   *big.Int `json:"id"`
+	ID   int `json:"id"`
 	Hash []byte   `json:"hash"`
 }
 
-func (l *ChainedLog) WithID(id uint64) *ChainedLog {
-	l.ID = big.NewInt(int64(id))
+func (l *ChainedLog) WithID(id int) *ChainedLog {
+	l.ID = id
 	return l
 }
 
@@ -132,24 +131,23 @@ type Log struct {
 	IdempotencyKey string    `json:"idempotencyKey"`
 }
 
-func (l *Log) WithDate(date time.Time) *Log {
+func (l Log) WithDate(date time.Time) Log {
 	l.Date = date
 	return l
 }
 
-func (l *Log) WithIdempotencyKey(key string) *Log {
+func (l Log) WithIdempotencyKey(key string) Log {
 	l.IdempotencyKey = key
 	return l
 }
 
-func (l *Log) ChainLog(previous *ChainedLog) *ChainedLog {
-	ret := &ChainedLog{
-		Log: *l,
-		ID:  big.NewInt(0),
+func (l Log) ChainLog(previous *ChainedLog) ChainedLog {
+	ret := ChainedLog{
+		Log: l,
 	}
 	ret.ComputeHash(previous)
 	if previous != nil {
-		ret.ID = ret.ID.Add(previous.ID, big.NewInt(1))
+		ret.ID = previous.ID + 1
 	}
 	return ret
 }
@@ -157,14 +155,14 @@ func (l *Log) ChainLog(previous *ChainedLog) *ChainedLog {
 type AccountMetadata map[string]metadata.Metadata
 
 type NewTransactionLogPayload struct {
-	Transaction     *Transaction    `json:"transaction"`
+	Transaction     Transaction    `json:"transaction"`
 	AccountMetadata AccountMetadata `json:"accountMetadata"`
 }
 
-func NewTransactionLogWithDate(tx *Transaction, accountMetadata map[string]metadata.Metadata, time time.Time) *Log {
+func NewTransactionLogWithDate(tx Transaction, accountMetadata map[string]metadata.Metadata, time time.Time) Log {
 	// Since the id is unique and the hash is a hash of the previous log, they
 	// will be filled at insertion time during the batch process.
-	return &Log{
+	return Log{
 		Type: NewTransactionLogType,
 		Date: time,
 		Data: NewTransactionLogPayload{
@@ -174,7 +172,7 @@ func NewTransactionLogWithDate(tx *Transaction, accountMetadata map[string]metad
 	}
 }
 
-func NewTransactionLog(tx *Transaction, accountMetadata map[string]metadata.Metadata) *Log {
+func NewTransactionLog(tx Transaction, accountMetadata map[string]metadata.Metadata) Log {
 	return NewTransactionLogWithDate(tx, accountMetadata, time.Now())
 }
 
@@ -255,7 +253,7 @@ func NewSetMetadataOnAccountLog(at time.Time, account string, metadata metadata.
 	}
 }
 
-func NewSetMetadataOnTransactionLog(at time.Time, txID *big.Int, metadata metadata.Metadata) *Log {
+func NewSetMetadataOnTransactionLog(at time.Time, txID int64, metadata metadata.Metadata) *Log {
 	return &Log{
 		Type: SetMetadataLogType,
 		Date: at,
@@ -268,11 +266,11 @@ func NewSetMetadataOnTransactionLog(at time.Time, txID *big.Int, metadata metada
 }
 
 type RevertedTransactionLogPayload struct {
-	RevertedTransactionID *big.Int     `json:"revertedTransactionID"`
+	RevertedTransactionID int        `json:"revertedTransactionID"`
 	RevertTransaction     *Transaction `json:"transaction"`
 }
 
-func NewRevertedTransactionLog(at time.Time, revertedTxID *big.Int, tx *Transaction) *Log {
+func NewRevertedTransactionLog(at time.Time, revertedTxID int, tx *Transaction) *Log {
 	return &Log{
 		Type: RevertedTransactionLogType,
 		Date: at,
@@ -304,14 +302,3 @@ func HydrateLog(_type LogType, data []byte) (any, error) {
 }
 
 type Accounts map[string]Account
-
-func ChainLogs(logs ...*Log) []*ChainedLog {
-	var previous *ChainedLog
-	ret := make([]*ChainedLog, 0)
-	for _, log := range logs {
-		next := log.ChainLog(previous)
-		ret = append(ret, next)
-		previous = next
-	}
-	return ret
-}

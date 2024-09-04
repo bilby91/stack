@@ -1,6 +1,7 @@
 package v2
 
 import (
+	ledgercontroller "github.com/formancehq/ledger/internal/controller/ledger"
 	"io"
 	"net/http"
 	"strconv"
@@ -8,14 +9,13 @@ import (
 	"github.com/formancehq/stack/libs/go-libs/bun/bunpaginate"
 	"github.com/formancehq/stack/libs/go-libs/time"
 
-	"github.com/formancehq/ledger/internal/storage/ledgerstore"
 	sharedapi "github.com/formancehq/stack/libs/go-libs/api"
 	"github.com/formancehq/stack/libs/go-libs/collectionutils"
 	"github.com/formancehq/stack/libs/go-libs/pointer"
 	"github.com/formancehq/stack/libs/go-libs/query"
 )
 
-func getPITOOTFilter(r *http.Request) (*ledgerstore.PITFilter, error) {
+func getPITOOTFilter(r *http.Request) (*ledgercontroller.PITFilter, error) {
 	pitString := r.URL.Query().Get("endTime")
 	ootString := r.URL.Query().Get("startTime")
 
@@ -38,13 +38,13 @@ func getPITOOTFilter(r *http.Request) (*ledgerstore.PITFilter, error) {
 		}
 	}
 
-	return &ledgerstore.PITFilter{
+	return &ledgercontroller.PITFilter{
 		PIT: &pit,
 		OOT: &oot,
 	}, nil
 }
 
-func getPITFilter(r *http.Request) (*ledgerstore.PITFilter, error) {
+func getPITFilter(r *http.Request) (*ledgercontroller.PITFilter, error) {
 	pitString := r.URL.Query().Get("pit")
 
 	pit := time.Now()
@@ -57,24 +57,24 @@ func getPITFilter(r *http.Request) (*ledgerstore.PITFilter, error) {
 		}
 	}
 
-	return &ledgerstore.PITFilter{
+	return &ledgercontroller.PITFilter{
 		PIT: &pit,
 	}, nil
 }
 
-func getPITFilterWithVolumes(r *http.Request) (*ledgerstore.PITFilterWithVolumes, error) {
+func getPITFilterWithVolumes(r *http.Request) (*ledgercontroller.PITFilterWithVolumes, error) {
 	pit, err := getPITFilter(r)
 	if err != nil {
 		return nil, err
 	}
-	return &ledgerstore.PITFilterWithVolumes{
+	return &ledgercontroller.PITFilterWithVolumes{
 		PITFilter:              *pit,
 		ExpandVolumes:          collectionutils.Contains(r.URL.Query()["expand"], "volumes"),
 		ExpandEffectiveVolumes: collectionutils.Contains(r.URL.Query()["expand"], "effectiveVolumes"),
 	}, nil
 }
 
-func getFiltersForVolumes(r *http.Request) (*ledgerstore.FiltersForVolumes, error) {
+func getFiltersForVolumes(r *http.Request) (*ledgercontroller.FiltersForVolumes, error) {
 	pit, err := getPITOOTFilter(r)
 	if err != nil {
 		return nil, err
@@ -93,7 +93,7 @@ func getFiltersForVolumes(r *http.Request) (*ledgerstore.FiltersForVolumes, erro
 			groupLvl = groupLvlInt
 		}
 	}
-	return &ledgerstore.FiltersForVolumes{
+	return &ledgercontroller.FiltersForVolumes{
 		PITFilter:        *pit,
 		UseInsertionDate: useInsertionDate,
 		GroupLvl:         uint(groupLvl),
@@ -116,7 +116,7 @@ func getQueryBuilder(r *http.Request) (query.Builder, error) {
 	return nil, nil
 }
 
-func getPaginatedQueryOptionsOfPITFilterWithVolumes(r *http.Request) (*ledgerstore.PaginatedQueryOptions[ledgerstore.PITFilterWithVolumes], error) {
+func getPaginatedQueryOptionsOfPITFilterWithVolumes(r *http.Request) (*ledgercontroller.PaginatedQueryOptions[ledgercontroller.PITFilterWithVolumes], error) {
 	qb, err := getQueryBuilder(r)
 	if err != nil {
 		return nil, err
@@ -132,12 +132,12 @@ func getPaginatedQueryOptionsOfPITFilterWithVolumes(r *http.Request) (*ledgersto
 		return nil, err
 	}
 
-	return pointer.For(ledgerstore.NewPaginatedQueryOptions(*pitFilter).
+	return pointer.For(ledgercontroller.NewPaginatedQueryOptions(*pitFilter).
 		WithQueryBuilder(qb).
 		WithPageSize(pageSize)), nil
 }
 
-func getPaginatedQueryOptionsOfFiltersForVolumes(r *http.Request) (*ledgerstore.PaginatedQueryOptions[ledgerstore.FiltersForVolumes], error) {
+func getPaginatedQueryOptionsOfFiltersForVolumes(r *http.Request) (*ledgercontroller.PaginatedQueryOptions[ledgercontroller.FiltersForVolumes], error) {
 	qb, err := getQueryBuilder(r)
 	if err != nil {
 		return nil, err
@@ -153,7 +153,7 @@ func getPaginatedQueryOptionsOfFiltersForVolumes(r *http.Request) (*ledgerstore.
 		return nil, err
 	}
 
-	return pointer.For(ledgerstore.NewPaginatedQueryOptions(*filtersForVolumes).
+	return pointer.For(ledgercontroller.NewPaginatedQueryOptions(*filtersForVolumes).
 		WithPageSize(pageSize).
 		WithQueryBuilder(qb)), nil
 }

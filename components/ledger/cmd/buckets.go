@@ -9,10 +9,14 @@ import (
 )
 
 func NewBucket() *cobra.Command {
-	return &cobra.Command{
+	ret := &cobra.Command{
 		Use:     "buckets",
 		Aliases: []string{"storage"},
 	}
+	service.AddFlags(ret.PersistentFlags())
+	bunconnect.AddFlags(ret.PersistentFlags())
+
+	return ret
 }
 
 func NewBucketUpgrade() *cobra.Command {
@@ -26,24 +30,22 @@ func NewBucketUpgrade() *cobra.Command {
 				return err
 			}
 
-			driver := driver.New(*connectionOptions)
-			if err := driver.Initialize(cmd.Context()); err != nil {
+			db, err := bunconnect.OpenSQLDB(cmd.Context(), *connectionOptions)
+			if err != nil {
 				return err
 			}
 			defer func() {
-				_ = driver.Close()
+				_ = db.Close()
 			}()
 
-			name := args[0]
-
-			bucket, err := driver.OpenBucket(cmd.Context(), name)
-			if err != nil {
+			driver := driver.New(db)
+			if err := driver.Initialize(cmd.Context()); err != nil {
 				return err
 			}
 
 			logger := logging.NewDefaultLogger(cmd.OutOrStdout(), service.IsDebug(cmd), false)
 
-			return bucket.Migrate(logging.ContextWithLogger(cmd.Context(), logger))
+			return driver.UpgradeBucket(logging.ContextWithLogger(cmd.Context(), logger), args[0])
 		},
 	}
 	return cmd
@@ -58,13 +60,18 @@ func upgradeAll(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	driver := driver.New(*connectionOptions)
-	if err := driver.Initialize(ctx); err != nil {
+	db, err := bunconnect.OpenSQLDB(cmd.Context(), *connectionOptions)
+	if err != nil {
 		return err
 	}
 	defer func() {
-		_ = driver.Close()
+		_ = db.Close()
 	}()
+
+	driver := driver.New(db)
+	if err := driver.Initialize(ctx); err != nil {
+		return err
+	}
 
 	return driver.UpgradeAllBuckets(ctx)
 }

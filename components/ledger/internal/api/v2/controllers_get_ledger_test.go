@@ -1,13 +1,13 @@
 package v2_test
 
 import (
+	ledger "github.com/formancehq/ledger/internal"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/formancehq/stack/libs/go-libs/time"
 
-	"github.com/formancehq/ledger/internal/storage/systemstore"
 	"github.com/formancehq/stack/libs/go-libs/api"
 	"github.com/formancehq/stack/libs/go-libs/auth"
 
@@ -26,15 +26,17 @@ func TestGetLedger(t *testing.T) {
 
 	name := uuid.NewString()
 	now := time.Now()
-	ledger := systemstore.Ledger{
+	l := ledger.Ledger{
 		Name:    name,
 		AddedAt: now,
-		Bucket:  "bucket0",
+		Configuration: ledger.Configuration{
+			Bucket:  "bucket0",
+		},
 	}
 	b.
 		EXPECT().
 		GetLedger(gomock.Any(), name).
-		Return(&ledger, nil)
+		Return(&l, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/"+name, nil)
 	rec := httptest.NewRecorder()
@@ -42,6 +44,6 @@ func TestGetLedger(t *testing.T) {
 	router.ServeHTTP(rec, req)
 
 	require.Equal(t, http.StatusOK, rec.Code)
-	ledgerFromAPI, _ := api.DecodeSingleResponse[systemstore.Ledger](t, rec.Body)
-	require.Equal(t, ledger, ledgerFromAPI)
+	ledgerFromAPI, _ := api.DecodeSingleResponse[ledger.Ledger](t, rec.Body)
+	require.Equal(t, l, ledgerFromAPI)
 }

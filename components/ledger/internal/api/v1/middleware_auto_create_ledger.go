@@ -1,11 +1,11 @@
 package v1
 
 import (
+	ledger "github.com/formancehq/ledger/internal"
+	"github.com/formancehq/stack/libs/go-libs/platform/postgres"
 	"net/http"
 
 	"github.com/formancehq/ledger/internal/api/backend"
-	"github.com/formancehq/ledger/internal/storage/driver"
-	"github.com/formancehq/ledger/internal/storage/sqlutils"
 	sharedapi "github.com/formancehq/stack/libs/go-libs/api"
 	"github.com/go-chi/chi/v5"
 )
@@ -16,12 +16,12 @@ func autoCreateMiddleware(backend backend.Backend) func(handler http.Handler) ht
 
 			ledgerName := chi.URLParam(r, "ledger")
 			if _, err := backend.GetLedger(r.Context(), ledgerName); err != nil {
-				if !sqlutils.IsNotFoundError(err) {
+				if !postgres.IsNotFoundError(err) {
 					sharedapi.InternalServerError(w, r, err)
 					return
 				}
 
-				if err := backend.CreateLedger(r.Context(), ledgerName, driver.LedgerConfiguration{
+				if err := backend.CreateLedger(r.Context(), ledgerName, ledger.Configuration{
 					Bucket: ledgerName,
 				}); err != nil {
 					sharedapi.InternalServerError(w, r, err)

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/formancehq/ledger/cmd"
@@ -114,10 +115,19 @@ func (s *Server) Start() {
 		}
 	}
 
+	var transport http.RoundTripper = &http.Transport{
+		MaxIdleConns:        100,
+		MaxIdleConnsPerHost: 100,
+		MaxConnsPerHost:     100,
+	}
+	if testing.Verbose() {
+		transport = httpclient.NewDebugHTTPTransport(transport)
+	}
+
 	s.httpClient = ledgerclient.New(
 		ledgerclient.WithServerURL(httpserver.URL(s.ctx)),
 		ledgerclient.WithClient(&http.Client{
-			Transport: httpclient.NewDebugHTTPTransport(http.DefaultTransport),
+			Transport: transport,
 		}),
 	)
 }

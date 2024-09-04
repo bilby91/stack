@@ -1,0 +1,18 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/formancehq/ledger/test/performance
+BenchmarkWrite/not_existing_source_to_not_existing_destination/testserver         	     295	   5406458 ns/op	         5.000 ms/transaction	       118.5 t/s	  149446 B/op	    1893 allocs/op
+--- BENCH: BenchmarkWrite/not_existing_source_to_not_existing_destination/testserver
+    server.go:176: Start testing server
+    server.go:177: Starting application with flags: serve --bind :0 --postgres-uri postgresql://root:root@127.0.0.1:33849/52b040dd-a166-4c00-a3d8-8e86c1a3cb8f?sslmode=disable --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s --postgres-max-idle-conns 100 --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s
+    write_test.go:270: Starting application with flags: serve --bind :0 --postgres-uri postgresql://root:root@127.0.0.1:33849/52b040dd-a166-4c00-a3d8-8e86c1a3cb8f?sslmode=disable --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s --postgres-max-idle-conns 100 --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s
+    write_test.go:149: Longest transaction: 1 (20.686042ms)
+    server.go:179: Stop testing server
+    server.go:176: Start testing server
+    server.go:177: Starting application with flags: serve --bind :0 --postgres-uri postgresql://root:root@127.0.0.1:33849/4f330382-4872-4bec-b6fd-584f02aee784?sslmode=disable --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s --postgres-max-idle-conns 100 --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s
+    write_test.go:270: Starting application with flags: serve --bind :0 --postgres-uri postgresql://root:root@127.0.0.1:33849/4f330382-4872-4bec-b6fd-584f02aee784?sslmode=disable --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s --postgres-max-idle-conns 100 --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s
+    write_test.go:149: Longest transaction: 1 (20.686042ms)
+    server.go:179: Stop testing server
+	... [output truncated]
+PASS
+ok  	github.com/formancehq/ledger/test/performance	6.543s

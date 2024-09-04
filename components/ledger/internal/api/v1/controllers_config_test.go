@@ -1,6 +1,7 @@
 package v1_test
 
 import (
+	ledger "github.com/formancehq/ledger/internal"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,8 +11,6 @@ import (
 	v1 "github.com/formancehq/ledger/internal/api/v1"
 	sharedapi "github.com/formancehq/stack/libs/go-libs/api"
 	"github.com/formancehq/stack/libs/go-libs/auth"
-
-	"github.com/formancehq/ledger/internal/storage/systemstore"
 
 	"github.com/formancehq/ledger/internal/opentelemetry/metrics"
 	"github.com/stretchr/testify/require"
@@ -27,8 +26,8 @@ func TestGetInfo(t *testing.T) {
 	backend.
 		EXPECT().
 		ListLedgers(gomock.Any(), gomock.Any()).
-		Return(&bunpaginate.Cursor[systemstore.Ledger]{
-			Data: []systemstore.Ledger{
+		Return(&bunpaginate.Cursor[ledger.Ledger]{
+			Data: []ledger.Ledger{
 				{
 					Name: "a",
 				},

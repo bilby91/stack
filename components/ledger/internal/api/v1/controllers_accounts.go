@@ -3,13 +3,13 @@ package v1
 import (
 	"encoding/json"
 	"fmt"
+	ledgercontroller "github.com/formancehq/ledger/internal/controller/ledger"
+	"github.com/formancehq/stack/libs/go-libs/platform/postgres"
 	"math/big"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
-
-	storageerrors "github.com/formancehq/ledger/internal/storage/sqlutils"
 
 	"github.com/formancehq/stack/libs/core/accounts"
 	"github.com/formancehq/stack/libs/go-libs/pointer"
@@ -21,7 +21,6 @@ import (
 	"github.com/pkg/errors"
 
 	ledger "github.com/formancehq/ledger/internal"
-	"github.com/formancehq/ledger/internal/storage/ledgerstore"
 	sharedapi "github.com/formancehq/stack/libs/go-libs/api"
 	"github.com/formancehq/stack/libs/go-libs/metadata"
 	"github.com/formancehq/stack/libs/go-libs/query"
@@ -97,7 +96,7 @@ func countAccounts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	count, err := l.CountAccounts(r.Context(), ledgerstore.NewGetAccountsQuery(*options))
+	count, err := l.CountAccounts(r.Context(), ledgercontroller.NewGetAccountsQuery(*options))
 	if err != nil {
 		sharedapi.InternalServerError(w, r, err)
 		return
@@ -110,13 +109,13 @@ func countAccounts(w http.ResponseWriter, r *http.Request) {
 func getAccounts(w http.ResponseWriter, r *http.Request) {
 	l := backend.LedgerFromContext(r.Context())
 
-	query, err := bunpaginate.Extract[ledgerstore.GetAccountsQuery](r, func() (*ledgerstore.GetAccountsQuery, error) {
+	query, err := bunpaginate.Extract[ledgercontroller.GetAccountsQuery](r, func() (*ledgercontroller.GetAccountsQuery, error) {
 		options, err := getPaginatedQueryOptionsOfPITFilterWithVolumes(r)
 		if err != nil {
 			return nil, err
 		}
 		options.QueryBuilder, err = buildAccountsFilterQuery(r)
-		return pointer.For(ledgerstore.NewGetAccountsQuery(*options)), nil
+		return pointer.For(ledgercontroller.NewGetAccountsQuery(*options)), nil
 	})
 	if err != nil {
 		sharedapi.BadRequest(w, ErrValidation, err)
@@ -141,13 +140,13 @@ func getAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := ledgerstore.NewGetAccountQuery(param)
+	query := ledgercontroller.NewGetAccountQuery(param)
 	query = query.WithExpandVolumes()
 
 	acc, err := l.GetAccountWithVolumes(r.Context(), query)
 	if err != nil {
 		switch {
-		case storageerrors.IsNotFoundError(err):
+		case postgres.IsNotFoundError(err):
 			acc = &ledger.ExpandedAccount{
 				Account: ledger.Account{
 					Address:  param,

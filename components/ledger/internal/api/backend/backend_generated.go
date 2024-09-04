@@ -11,15 +11,12 @@ package backend
 
 import (
 	context "context"
-	big "math/big"
 	reflect "reflect"
 
 	ledger "github.com/formancehq/ledger/internal"
-	engine "github.com/formancehq/ledger/internal/engine"
-	command "github.com/formancehq/ledger/internal/engine/command"
-	driver "github.com/formancehq/ledger/internal/storage/driver"
-	ledgerstore "github.com/formancehq/ledger/internal/storage/ledgerstore"
-	systemstore "github.com/formancehq/ledger/internal/storage/systemstore"
+	ledger0 "github.com/formancehq/ledger/internal/controller/ledger"
+	writer "github.com/formancehq/ledger/internal/controller/ledger/writer"
+	system "github.com/formancehq/ledger/internal/controller/system"
 	bunpaginate "github.com/formancehq/stack/libs/go-libs/bun/bunpaginate"
 	metadata "github.com/formancehq/stack/libs/go-libs/metadata"
 	migrations "github.com/formancehq/stack/libs/go-libs/migrations"
@@ -50,7 +47,7 @@ func (m *MockLedger) EXPECT() *MockLedgerMockRecorder {
 }
 
 // CountAccounts mocks base method.
-func (m *MockLedger) CountAccounts(ctx context.Context, query ledgerstore.GetAccountsQuery) (int, error) {
+func (m *MockLedger) CountAccounts(ctx context.Context, query ledger0.GetAccountsQuery) (int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CountAccounts", ctx, query)
 	ret0, _ := ret[0].(int)
@@ -65,7 +62,7 @@ func (mr *MockLedgerMockRecorder) CountAccounts(ctx, query any) *gomock.Call {
 }
 
 // CountTransactions mocks base method.
-func (m *MockLedger) CountTransactions(ctx context.Context, query ledgerstore.GetTransactionsQuery) (int, error) {
+func (m *MockLedger) CountTransactions(ctx context.Context, query ledger0.GetTransactionsQuery) (int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CountTransactions", ctx, query)
 	ret0, _ := ret[0].(int)
@@ -80,7 +77,7 @@ func (mr *MockLedgerMockRecorder) CountTransactions(ctx, query any) *gomock.Call
 }
 
 // CreateTransaction mocks base method.
-func (m *MockLedger) CreateTransaction(ctx context.Context, parameters command.Parameters, data ledger.RunScript) (*ledger.Transaction, error) {
+func (m *MockLedger) CreateTransaction(ctx context.Context, parameters writer.Parameters, data ledger.RunScript) (*ledger.Transaction, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateTransaction", ctx, parameters, data)
 	ret0, _ := ret[0].(*ledger.Transaction)
@@ -95,7 +92,7 @@ func (mr *MockLedgerMockRecorder) CreateTransaction(ctx, parameters, data any) *
 }
 
 // DeleteMetadata mocks base method.
-func (m *MockLedger) DeleteMetadata(ctx context.Context, parameters command.Parameters, targetType string, targetID any, key string) error {
+func (m *MockLedger) DeleteMetadata(ctx context.Context, parameters writer.Parameters, targetType string, targetID any, key string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteMetadata", ctx, parameters, targetType, targetID, key)
 	ret0, _ := ret[0].(error)
@@ -109,7 +106,7 @@ func (mr *MockLedgerMockRecorder) DeleteMetadata(ctx, parameters, targetType, ta
 }
 
 // Export mocks base method.
-func (m *MockLedger) Export(ctx context.Context, w engine.ExportWriter) error {
+func (m *MockLedger) Export(ctx context.Context, w ledger0.ExportWriter) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Export", ctx, w)
 	ret0, _ := ret[0].(error)
@@ -123,7 +120,7 @@ func (mr *MockLedgerMockRecorder) Export(ctx, w any) *gomock.Call {
 }
 
 // GetAccountWithVolumes mocks base method.
-func (m *MockLedger) GetAccountWithVolumes(ctx context.Context, query ledgerstore.GetAccountQuery) (*ledger.ExpandedAccount, error) {
+func (m *MockLedger) GetAccountWithVolumes(ctx context.Context, query ledger0.GetAccountQuery) (*ledger.ExpandedAccount, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAccountWithVolumes", ctx, query)
 	ret0, _ := ret[0].(*ledger.ExpandedAccount)
@@ -138,7 +135,7 @@ func (mr *MockLedgerMockRecorder) GetAccountWithVolumes(ctx, query any) *gomock.
 }
 
 // GetAccountsWithVolumes mocks base method.
-func (m *MockLedger) GetAccountsWithVolumes(ctx context.Context, query ledgerstore.GetAccountsQuery) (*bunpaginate.Cursor[ledger.ExpandedAccount], error) {
+func (m *MockLedger) GetAccountsWithVolumes(ctx context.Context, query ledger0.GetAccountsQuery) (*bunpaginate.Cursor[ledger.ExpandedAccount], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAccountsWithVolumes", ctx, query)
 	ret0, _ := ret[0].(*bunpaginate.Cursor[ledger.ExpandedAccount])
@@ -153,7 +150,7 @@ func (mr *MockLedgerMockRecorder) GetAccountsWithVolumes(ctx, query any) *gomock
 }
 
 // GetAggregatedBalances mocks base method.
-func (m *MockLedger) GetAggregatedBalances(ctx context.Context, q ledgerstore.GetAggregatedBalanceQuery) (ledger.BalancesByAssets, error) {
+func (m *MockLedger) GetAggregatedBalances(ctx context.Context, q ledger0.GetAggregatedBalanceQuery) (ledger.BalancesByAssets, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAggregatedBalances", ctx, q)
 	ret0, _ := ret[0].(ledger.BalancesByAssets)
@@ -168,7 +165,7 @@ func (mr *MockLedgerMockRecorder) GetAggregatedBalances(ctx, q any) *gomock.Call
 }
 
 // GetLogs mocks base method.
-func (m *MockLedger) GetLogs(ctx context.Context, query ledgerstore.GetLogsQuery) (*bunpaginate.Cursor[ledger.ChainedLog], error) {
+func (m *MockLedger) GetLogs(ctx context.Context, query ledger0.GetLogsQuery) (*bunpaginate.Cursor[ledger.ChainedLog], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLogs", ctx, query)
 	ret0, _ := ret[0].(*bunpaginate.Cursor[ledger.ChainedLog])
@@ -198,7 +195,7 @@ func (mr *MockLedgerMockRecorder) GetMigrationsInfo(ctx any) *gomock.Call {
 }
 
 // GetTransactionWithVolumes mocks base method.
-func (m *MockLedger) GetTransactionWithVolumes(ctx context.Context, query ledgerstore.GetTransactionQuery) (*ledger.ExpandedTransaction, error) {
+func (m *MockLedger) GetTransactionWithVolumes(ctx context.Context, query ledger0.GetTransactionQuery) (*ledger.ExpandedTransaction, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTransactionWithVolumes", ctx, query)
 	ret0, _ := ret[0].(*ledger.ExpandedTransaction)
@@ -213,7 +210,7 @@ func (mr *MockLedgerMockRecorder) GetTransactionWithVolumes(ctx, query any) *gom
 }
 
 // GetTransactions mocks base method.
-func (m *MockLedger) GetTransactions(ctx context.Context, query ledgerstore.GetTransactionsQuery) (*bunpaginate.Cursor[ledger.ExpandedTransaction], error) {
+func (m *MockLedger) GetTransactions(ctx context.Context, query ledger0.GetTransactionsQuery) (*bunpaginate.Cursor[ledger.ExpandedTransaction], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTransactions", ctx, query)
 	ret0, _ := ret[0].(*bunpaginate.Cursor[ledger.ExpandedTransaction])
@@ -228,7 +225,7 @@ func (mr *MockLedgerMockRecorder) GetTransactions(ctx, query any) *gomock.Call {
 }
 
 // GetVolumesWithBalances mocks base method.
-func (m *MockLedger) GetVolumesWithBalances(ctx context.Context, q ledgerstore.GetVolumesWithBalancesQuery) (*bunpaginate.Cursor[ledger.VolumesWithBalanceByAssetByAccount], error) {
+func (m *MockLedger) GetVolumesWithBalances(ctx context.Context, q ledger0.GetVolumesWithBalancesQuery) (*bunpaginate.Cursor[ledger.VolumesWithBalanceByAssetByAccount], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetVolumesWithBalances", ctx, q)
 	ret0, _ := ret[0].(*bunpaginate.Cursor[ledger.VolumesWithBalanceByAssetByAccount])
@@ -272,7 +269,7 @@ func (mr *MockLedgerMockRecorder) IsDatabaseUpToDate(ctx any) *gomock.Call {
 }
 
 // RevertTransaction mocks base method.
-func (m *MockLedger) RevertTransaction(ctx context.Context, parameters command.Parameters, id *big.Int, force, atEffectiveDate bool) (*ledger.Transaction, error) {
+func (m *MockLedger) RevertTransaction(ctx context.Context, parameters writer.Parameters, id int, force, atEffectiveDate bool) (*ledger.Transaction, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RevertTransaction", ctx, parameters, id, force, atEffectiveDate)
 	ret0, _ := ret[0].(*ledger.Transaction)
@@ -287,7 +284,7 @@ func (mr *MockLedgerMockRecorder) RevertTransaction(ctx, parameters, id, force, 
 }
 
 // SaveMeta mocks base method.
-func (m_2 *MockLedger) SaveMeta(ctx context.Context, parameters command.Parameters, targetType string, targetID any, m metadata.Metadata) error {
+func (m_2 *MockLedger) SaveMeta(ctx context.Context, parameters writer.Parameters, targetType string, targetID any, m metadata.Metadata) error {
 	m_2.ctrl.T.Helper()
 	ret := m_2.ctrl.Call(m_2, "SaveMeta", ctx, parameters, targetType, targetID, m)
 	ret0, _ := ret[0].(error)
@@ -301,10 +298,10 @@ func (mr *MockLedgerMockRecorder) SaveMeta(ctx, parameters, targetType, targetID
 }
 
 // Stats mocks base method.
-func (m *MockLedger) Stats(ctx context.Context) (engine.Stats, error) {
+func (m *MockLedger) Stats(ctx context.Context) (ledger0.Stats, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Stats", ctx)
-	ret0, _ := ret[0].(engine.Stats)
+	ret0, _ := ret[0].(ledger0.Stats)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -339,7 +336,7 @@ func (m *MockBackend) EXPECT() *MockBackendMockRecorder {
 }
 
 // CreateLedger mocks base method.
-func (m *MockBackend) CreateLedger(ctx context.Context, name string, configuration driver.LedgerConfiguration) error {
+func (m *MockBackend) CreateLedger(ctx context.Context, name string, configuration ledger.Configuration) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateLedger", ctx, name, configuration)
 	ret0, _ := ret[0].(error)
@@ -367,10 +364,10 @@ func (mr *MockBackendMockRecorder) DeleteLedgerMetadata(ctx, param, key any) *go
 }
 
 // GetLedger mocks base method.
-func (m *MockBackend) GetLedger(ctx context.Context, name string) (*systemstore.Ledger, error) {
+func (m *MockBackend) GetLedger(ctx context.Context, name string) (*ledger.Ledger, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLedger", ctx, name)
-	ret0, _ := ret[0].(*systemstore.Ledger)
+	ret0, _ := ret[0].(*ledger.Ledger)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -381,19 +378,19 @@ func (mr *MockBackendMockRecorder) GetLedger(ctx, name any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLedger", reflect.TypeOf((*MockBackend)(nil).GetLedger), ctx, name)
 }
 
-// GetLedgerEngine mocks base method.
-func (m *MockBackend) GetLedgerEngine(ctx context.Context, name string) (Ledger, error) {
+// GetLedgerController mocks base method.
+func (m *MockBackend) GetLedgerController(ctx context.Context, name string) (Ledger, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLedgerEngine", ctx, name)
+	ret := m.ctrl.Call(m, "GetLedgerController", ctx, name)
 	ret0, _ := ret[0].(Ledger)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetLedgerEngine indicates an expected call of GetLedgerEngine.
-func (mr *MockBackendMockRecorder) GetLedgerEngine(ctx, name any) *gomock.Call {
+// GetLedgerController indicates an expected call of GetLedgerController.
+func (mr *MockBackendMockRecorder) GetLedgerController(ctx, name any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLedgerEngine", reflect.TypeOf((*MockBackend)(nil).GetLedgerEngine), ctx, name)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLedgerController", reflect.TypeOf((*MockBackend)(nil).GetLedgerController), ctx, name)
 }
 
 // GetVersion mocks base method.
@@ -411,10 +408,10 @@ func (mr *MockBackendMockRecorder) GetVersion() *gomock.Call {
 }
 
 // ListLedgers mocks base method.
-func (m *MockBackend) ListLedgers(ctx context.Context, query systemstore.ListLedgersQuery) (*bunpaginate.Cursor[systemstore.Ledger], error) {
+func (m *MockBackend) ListLedgers(ctx context.Context, query system.ListLedgersQuery) (*bunpaginate.Cursor[ledger.Ledger], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListLedgers", ctx, query)
-	ret0, _ := ret[0].(*bunpaginate.Cursor[systemstore.Ledger])
+	ret0, _ := ret[0].(*bunpaginate.Cursor[ledger.Ledger])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

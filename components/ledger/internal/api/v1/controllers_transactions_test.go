@@ -2,6 +2,8 @@ package v1_test
 
 import (
 	"encoding/json"
+	ledgercontroller "github.com/formancehq/ledger/internal/controller/ledger"
+	"github.com/formancehq/ledger/internal/controller/ledger/writer"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -15,9 +17,7 @@ import (
 
 	ledger "github.com/formancehq/ledger/internal"
 	v1 "github.com/formancehq/ledger/internal/api/v1"
-	"github.com/formancehq/ledger/internal/engine/command"
 	"github.com/formancehq/ledger/internal/opentelemetry/metrics"
-	"github.com/formancehq/ledger/internal/storage/ledgerstore"
 	sharedapi "github.com/formancehq/stack/libs/go-libs/api"
 	"github.com/formancehq/stack/libs/go-libs/metadata"
 	"github.com/formancehq/stack/libs/go-libs/query"
@@ -230,7 +230,7 @@ func TestPostTransactions(t *testing.T) {
 			backend, mockLedger := newTestingBackend(t, true)
 			if testCase.expectedStatusCode < 300 && testCase.expectedStatusCode >= 200 {
 				mockLedger.EXPECT().
-					CreateTransaction(gomock.Any(), command.Parameters{
+					CreateTransaction(gomock.Any(), writer.Parameters{
 						DryRun: tc.expectedPreview,
 					}, testCase.expectedRunScript).
 					Return(expectedTx, nil)
@@ -294,7 +294,7 @@ func TestPostTransactionMetadata(t *testing.T) {
 			backend, mock := newTestingBackend(t, true)
 			if testCase.expectStatusCode == http.StatusNoContent {
 				mock.EXPECT().
-					SaveMeta(gomock.Any(), command.Parameters{}, ledger.MetaTargetTypeTransaction, big.NewInt(0), testCase.body).
+					SaveMeta(gomock.Any(), writer.Parameters{}, ledger.MetaTargetTypeTransaction, big.NewInt(0), testCase.body).
 					Return(nil)
 			}
 
@@ -328,7 +328,7 @@ func TestGetTransaction(t *testing.T) {
 
 	backend, mock := newTestingBackend(t, true)
 	mock.EXPECT().
-		GetTransactionWithVolumes(gomock.Any(), ledgerstore.NewGetTransactionQuery(big.NewInt(0))).
+		GetTransactionWithVolumes(gomock.Any(), ledgercontroller.NewGetTransactionQuery(0)).
 		Return(&tx, nil)
 
 	router := v1.NewRouter(backend, nil, metrics.NewNoOpRegistry(), auth.NewNoAuth(), testing.Verbose())
@@ -349,7 +349,7 @@ func TestGetTransactions(t *testing.T) {
 	type testCase struct {
 		name              string
 		queryParams       url.Values
-		expectQuery       ledgerstore.PaginatedQueryOptions[ledgerstore.PITFilterWithVolumes]
+		expectQuery       ledgercontroller.PaginatedQueryOptions[ledgercontroller.PITFilterWithVolumes]
 		expectStatusCode  int
 		expectedErrorCode string
 	}
@@ -358,14 +358,14 @@ func TestGetTransactions(t *testing.T) {
 	testCases := []testCase{
 		{
 			name:        "nominal",
-			expectQuery: ledgerstore.NewPaginatedQueryOptions(ledgerstore.PITFilterWithVolumes{}),
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions(ledgercontroller.PITFilterWithVolumes{}),
 		},
 		{
 			name: "using metadata",
 			queryParams: url.Values{
 				"metadata[roles]": []string{"admin"},
 			},
-			expectQuery: ledgerstore.NewPaginatedQueryOptions(ledgerstore.PITFilterWithVolumes{}).
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions(ledgercontroller.PITFilterWithVolumes{}).
 				WithQueryBuilder(query.Match("metadata[roles]", "admin")),
 		},
 		{
@@ -373,7 +373,7 @@ func TestGetTransactions(t *testing.T) {
 			queryParams: url.Values{
 				"start_time": []string{now.Format(time.DateFormat)},
 			},
-			expectQuery: ledgerstore.NewPaginatedQueryOptions(ledgerstore.PITFilterWithVolumes{}).
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions(ledgercontroller.PITFilterWithVolumes{}).
 				WithQueryBuilder(query.Gte("date", now.Format(time.DateFormat))),
 		},
 		{
@@ -381,7 +381,7 @@ func TestGetTransactions(t *testing.T) {
 			queryParams: url.Values{
 				"end_time": []string{now.Format(time.DateFormat)},
 			},
-			expectQuery: ledgerstore.NewPaginatedQueryOptions(ledgerstore.PITFilterWithVolumes{}).
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions(ledgercontroller.PITFilterWithVolumes{}).
 				WithQueryBuilder(query.Lt("date", now.Format(time.DateFormat))),
 		},
 		{
@@ -389,7 +389,7 @@ func TestGetTransactions(t *testing.T) {
 			queryParams: url.Values{
 				"account": []string{"xxx"},
 			},
-			expectQuery: ledgerstore.NewPaginatedQueryOptions(ledgerstore.PITFilterWithVolumes{}).
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions(ledgercontroller.PITFilterWithVolumes{}).
 				WithQueryBuilder(query.Match("account", "xxx")),
 		},
 		{
@@ -397,7 +397,7 @@ func TestGetTransactions(t *testing.T) {
 			queryParams: url.Values{
 				"reference": []string{"xxx"},
 			},
-			expectQuery: ledgerstore.NewPaginatedQueryOptions(ledgerstore.PITFilterWithVolumes{}).
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions(ledgercontroller.PITFilterWithVolumes{}).
 				WithQueryBuilder(query.Match("reference", "xxx")),
 		},
 		{
@@ -405,7 +405,7 @@ func TestGetTransactions(t *testing.T) {
 			queryParams: url.Values{
 				"destination": []string{"xxx"},
 			},
-			expectQuery: ledgerstore.NewPaginatedQueryOptions(ledgerstore.PITFilterWithVolumes{}).
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions(ledgercontroller.PITFilterWithVolumes{}).
 				WithQueryBuilder(query.Match("destination", "xxx")),
 		},
 		{
@@ -413,15 +413,15 @@ func TestGetTransactions(t *testing.T) {
 			queryParams: url.Values{
 				"source": []string{"xxx"},
 			},
-			expectQuery: ledgerstore.NewPaginatedQueryOptions(ledgerstore.PITFilterWithVolumes{}).
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions(ledgercontroller.PITFilterWithVolumes{}).
 				WithQueryBuilder(query.Match("source", "xxx")),
 		},
 		{
 			name: "using empty cursor",
 			queryParams: url.Values{
-				"cursor": []string{bunpaginate.EncodeCursor(ledgerstore.NewGetTransactionsQuery(ledgerstore.NewPaginatedQueryOptions(ledgerstore.PITFilterWithVolumes{})))},
+				"cursor": []string{bunpaginate.EncodeCursor(ledgercontroller.NewGetTransactionsQuery(ledgercontroller.NewPaginatedQueryOptions(ledgercontroller.PITFilterWithVolumes{})))},
 			},
-			expectQuery: ledgerstore.NewPaginatedQueryOptions(ledgerstore.PITFilterWithVolumes{}),
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions(ledgercontroller.PITFilterWithVolumes{}),
 		},
 		{
 			name: "using invalid cursor",
@@ -444,7 +444,7 @@ func TestGetTransactions(t *testing.T) {
 			queryParams: url.Values{
 				"pageSize": []string{"1000000"},
 			},
-			expectQuery: ledgerstore.NewPaginatedQueryOptions(ledgerstore.PITFilterWithVolumes{}).
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions(ledgercontroller.PITFilterWithVolumes{}).
 				WithPageSize(v1.MaxPageSize),
 		},
 	}
@@ -470,7 +470,7 @@ func TestGetTransactions(t *testing.T) {
 			backend, mockLedger := newTestingBackend(t, true)
 			if testCase.expectStatusCode < 300 && testCase.expectStatusCode >= 200 {
 				mockLedger.EXPECT().
-					GetTransactions(gomock.Any(), ledgerstore.NewGetTransactionsQuery(testCase.expectQuery)).
+					GetTransactions(gomock.Any(), ledgercontroller.NewGetTransactionsQuery(testCase.expectQuery)).
 					Return(&expectedCursor, nil)
 			}
 
@@ -501,7 +501,7 @@ func TestCountTransactions(t *testing.T) {
 	type testCase struct {
 		name              string
 		queryParams       url.Values
-		expectQuery       ledgerstore.PaginatedQueryOptions[ledgerstore.PITFilterWithVolumes]
+		expectQuery       ledgercontroller.PaginatedQueryOptions[ledgercontroller.PITFilterWithVolumes]
 		expectStatusCode  int
 		expectedErrorCode string
 	}
@@ -510,14 +510,14 @@ func TestCountTransactions(t *testing.T) {
 	testCases := []testCase{
 		{
 			name:        "nominal",
-			expectQuery: ledgerstore.NewPaginatedQueryOptions(ledgerstore.PITFilterWithVolumes{}),
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions(ledgercontroller.PITFilterWithVolumes{}),
 		},
 		{
 			name: "using metadata",
 			queryParams: url.Values{
 				"metadata[roles]": []string{"admin"},
 			},
-			expectQuery: ledgerstore.NewPaginatedQueryOptions(ledgerstore.PITFilterWithVolumes{}).
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions(ledgercontroller.PITFilterWithVolumes{}).
 				WithQueryBuilder(query.Match("metadata[roles]", "admin")),
 		},
 		{
@@ -525,7 +525,7 @@ func TestCountTransactions(t *testing.T) {
 			queryParams: url.Values{
 				"start_time": []string{now.Format(time.DateFormat)},
 			},
-			expectQuery: ledgerstore.NewPaginatedQueryOptions(ledgerstore.PITFilterWithVolumes{}).
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions(ledgercontroller.PITFilterWithVolumes{}).
 				WithQueryBuilder(query.Gte("date", now.Format(time.DateFormat))),
 		},
 		{
@@ -533,7 +533,7 @@ func TestCountTransactions(t *testing.T) {
 			queryParams: url.Values{
 				"end_time": []string{now.Format(time.DateFormat)},
 			},
-			expectQuery: ledgerstore.NewPaginatedQueryOptions(ledgerstore.PITFilterWithVolumes{}).
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions(ledgercontroller.PITFilterWithVolumes{}).
 				WithQueryBuilder(query.Lt("date", now.Format(time.DateFormat))),
 		},
 		{
@@ -541,7 +541,7 @@ func TestCountTransactions(t *testing.T) {
 			queryParams: url.Values{
 				"account": []string{"xxx"},
 			},
-			expectQuery: ledgerstore.NewPaginatedQueryOptions(ledgerstore.PITFilterWithVolumes{}).
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions(ledgercontroller.PITFilterWithVolumes{}).
 				WithQueryBuilder(query.Match("account", "xxx")),
 		},
 		{
@@ -549,7 +549,7 @@ func TestCountTransactions(t *testing.T) {
 			queryParams: url.Values{
 				"reference": []string{"xxx"},
 			},
-			expectQuery: ledgerstore.NewPaginatedQueryOptions(ledgerstore.PITFilterWithVolumes{}).
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions(ledgercontroller.PITFilterWithVolumes{}).
 				WithQueryBuilder(query.Match("reference", "xxx")),
 		},
 		{
@@ -557,7 +557,7 @@ func TestCountTransactions(t *testing.T) {
 			queryParams: url.Values{
 				"destination": []string{"xxx"},
 			},
-			expectQuery: ledgerstore.NewPaginatedQueryOptions(ledgerstore.PITFilterWithVolumes{}).
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions(ledgercontroller.PITFilterWithVolumes{}).
 				WithQueryBuilder(query.Match("destination", "xxx")),
 		},
 		{
@@ -565,7 +565,7 @@ func TestCountTransactions(t *testing.T) {
 			queryParams: url.Values{
 				"source": []string{"xxx"},
 			},
-			expectQuery: ledgerstore.NewPaginatedQueryOptions(ledgerstore.PITFilterWithVolumes{}).
+			expectQuery: ledgercontroller.NewPaginatedQueryOptions(ledgercontroller.PITFilterWithVolumes{}).
 				WithQueryBuilder(query.Match("source", "xxx")),
 		},
 	}
@@ -580,7 +580,7 @@ func TestCountTransactions(t *testing.T) {
 			backend, mockLedger := newTestingBackend(t, true)
 			if testCase.expectStatusCode < 300 && testCase.expectStatusCode >= 200 {
 				mockLedger.EXPECT().
-					CountTransactions(gomock.Any(), ledgerstore.NewGetTransactionsQuery(testCase.expectQuery)).
+					CountTransactions(gomock.Any(), ledgercontroller.NewGetTransactionsQuery(testCase.expectQuery)).
 					Return(10, nil)
 			}
 
@@ -613,7 +613,7 @@ func TestRevertTransaction(t *testing.T) {
 	backend, mockLedger := newTestingBackend(t, true)
 	mockLedger.
 		EXPECT().
-		RevertTransaction(gomock.Any(), command.Parameters{}, big.NewInt(0), false, false).
+		RevertTransaction(gomock.Any(), writer.Parameters{}, 0, false, false).
 		Return(expectedTx, nil)
 
 	router := v1.NewRouter(backend, nil, metrics.NewNoOpRegistry(), auth.NewNoAuth(), testing.Verbose())
@@ -638,7 +638,7 @@ func TestForceRevertTransaction(t *testing.T) {
 	backend, mockLedger := newTestingBackend(t, true)
 	mockLedger.
 		EXPECT().
-		RevertTransaction(gomock.Any(), command.Parameters{}, big.NewInt(0), true, false).
+		RevertTransaction(gomock.Any(), writer.Parameters{}, 0, true, false).
 		Return(expectedTx, nil)
 
 	router := v1.NewRouter(backend, nil, metrics.NewNoOpRegistry(), auth.NewNoAuth(), testing.Verbose())

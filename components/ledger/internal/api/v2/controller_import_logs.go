@@ -2,10 +2,9 @@ package v2
 
 import (
 	"encoding/json"
+	ledgercontroller "github.com/formancehq/ledger/internal/controller/ledger"
 	"io"
 	"net/http"
-
-	"github.com/formancehq/ledger/internal/engine"
 
 	ledger "github.com/formancehq/ledger/internal"
 	"github.com/formancehq/ledger/internal/api/backend"
@@ -23,7 +22,7 @@ func importLogs(w http.ResponseWriter, r *http.Request) {
 	dec := json.NewDecoder(r.Body)
 	handleError := func(err error) {
 		switch {
-		case errors.Is(err, engine.ImportError{}):
+		case errors.Is(err, ledgercontroller.ImportError{}):
 			api.WriteErrorResponse(w, http.StatusBadRequest, "IMPORT", err)
 		default:
 			api.InternalServerError(w, r, err)

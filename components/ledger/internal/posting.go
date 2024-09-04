@@ -18,6 +18,22 @@ type Posting struct {
 	Asset       string   `json:"asset"`
 }
 
+func (p Posting) GetSource() string {
+	return p.Source
+}
+
+func (p Posting) GetDestination() string {
+	return p.Destination
+}
+
+func (p Posting) GetAmount() *big.Int {
+	return p.Amount
+}
+
+func (p Posting) GetAsset() string {
+	return p.Asset
+}
+
 func NewPosting(source string, destination string, asset string, amount *big.Int) Posting {
 	return Posting{
 		Source:      source,
@@ -29,14 +45,19 @@ func NewPosting(source string, destination string, asset string, amount *big.Int
 
 type Postings []Posting
 
-func (p Postings) Reverse() {
+func (p Postings) Reverse() Postings {
+	postings := make(Postings, len(p))
+	copy(postings, p)
+
 	for i := range p {
-		p[i].Source, p[i].Destination = p[i].Destination, p[i].Source
+		postings[i].Source, postings[i].Destination = postings[i].Destination, postings[i].Source
 	}
 
 	for i := 0; i < len(p)/2; i++ {
-		p[i], p[len(p)-i-1] = p[len(p)-i-1], p[i]
+		postings[i], postings[len(postings)-i-1] = postings[len(postings)-i-1], postings[i]
 	}
+
+	return postings
 }
 
 // Scan - Implement the database/sql scanner interface

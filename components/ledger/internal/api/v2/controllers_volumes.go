@@ -1,10 +1,10 @@
 package v2
 
 import (
+	ledgercontroller "github.com/formancehq/ledger/internal/controller/ledger"
 	"net/http"
 
 	"github.com/formancehq/ledger/internal/api/backend"
-	"github.com/formancehq/ledger/internal/storage/ledgerstore"
 	sharedapi "github.com/formancehq/stack/libs/go-libs/api"
 
 	"github.com/formancehq/stack/libs/go-libs/pointer"
@@ -16,13 +16,13 @@ func getVolumesWithBalances(w http.ResponseWriter, r *http.Request) {
 
 	l := backend.LedgerFromContext(r.Context())
 
-	query, err := bunpaginate.Extract[ledgerstore.GetVolumesWithBalancesQuery](r, func() (*ledgerstore.GetVolumesWithBalancesQuery, error) {
+	query, err := bunpaginate.Extract[ledgercontroller.GetVolumesWithBalancesQuery](r, func() (*ledgercontroller.GetVolumesWithBalancesQuery, error) {
 		options, err := getPaginatedQueryOptionsOfFiltersForVolumes(r)
 		if err != nil {
 			return nil, err
 		}
 
-		getVolumesWithBalancesQuery := ledgerstore.NewGetVolumesWithBalancesQuery(*options)
+		getVolumesWithBalancesQuery := ledgercontroller.NewGetVolumesWithBalancesQuery(*options)
 		return pointer.For(getVolumesWithBalancesQuery), nil
 
 	})
@@ -36,8 +36,8 @@ func getVolumesWithBalances(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		switch {
-		case ledgerstore.IsErrInvalidQuery(err):
-			sharedapi.BadRequest(w, ErrValidation, err)
+		//case ledger.IsErrInvalidQuery(err):
+		//	sharedapi.BadRequest(w, ErrValidation, err)
 		default:
 			sharedapi.InternalServerError(w, r, err)
 		}

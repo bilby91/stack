@@ -3,6 +3,8 @@ package v2_test
 import (
 	"bytes"
 	"fmt"
+	"github.com/formancehq/ledger/internal/controller/ledger/writer"
+	"github.com/formancehq/stack/libs/go-libs/collectionutils"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -14,7 +16,6 @@ import (
 	ledger "github.com/formancehq/ledger/internal"
 	"github.com/formancehq/ledger/internal/api/backend"
 	v2 "github.com/formancehq/ledger/internal/api/v2"
-	"github.com/formancehq/ledger/internal/engine/command"
 	"github.com/formancehq/ledger/internal/opentelemetry/metrics"
 	sharedapi "github.com/formancehq/stack/libs/go-libs/api"
 	"github.com/formancehq/stack/libs/go-libs/auth"
@@ -61,7 +62,7 @@ func TestBulk(t *testing.T) {
 					Asset:       "USD/2",
 				}}
 				mockLedger.EXPECT().
-					CreateTransaction(gomock.Any(), command.Parameters{}, ledger.TxToScriptData(ledger.TransactionData{
+					CreateTransaction(gomock.Any(), writer.Parameters{}, ledger.TxToScriptData(ledger.TransactionData{
 						Postings:  postings,
 						Timestamp: now,
 					}, false)).
@@ -71,7 +72,6 @@ func TestBulk(t *testing.T) {
 							Metadata:  metadata.Metadata{},
 							Timestamp: now,
 						},
-						ID: big.NewInt(0),
 					}, nil)
 			},
 			expectResults: []v2.Result{{
@@ -106,7 +106,7 @@ func TestBulk(t *testing.T) {
 			}]`,
 			expectations: func(mockLedger *backend.MockLedger) {
 				mockLedger.EXPECT().
-					SaveMeta(gomock.Any(), command.Parameters{}, ledger.MetaTargetTypeTransaction, big.NewInt(1), metadata.Metadata{
+					SaveMeta(gomock.Any(), writer.Parameters{}, ledger.MetaTargetTypeTransaction, big.NewInt(1), metadata.Metadata{
 						"foo": "bar",
 					}).
 					Return(nil)
@@ -129,7 +129,7 @@ func TestBulk(t *testing.T) {
 			}]`,
 			expectations: func(mockLedger *backend.MockLedger) {
 				mockLedger.EXPECT().
-					SaveMeta(gomock.Any(), command.Parameters{}, ledger.MetaTargetTypeAccount, "world", metadata.Metadata{
+					SaveMeta(gomock.Any(), writer.Parameters{}, ledger.MetaTargetTypeAccount, "world", metadata.Metadata{
 						"foo": "bar",
 					}).
 					Return(nil)
@@ -148,12 +148,12 @@ func TestBulk(t *testing.T) {
 			}]`,
 			expectations: func(mockLedger *backend.MockLedger) {
 				mockLedger.EXPECT().
-					RevertTransaction(gomock.Any(), command.Parameters{}, big.NewInt(1), false, false).
+					RevertTransaction(gomock.Any(), writer.Parameters{}, 1, false, false).
 					Return(&ledger.Transaction{}, nil)
 			},
 			expectResults: []v2.Result{{
 				Data: map[string]any{
-					"id":        nil,
+					"id":        float64(0),
 					"metadata":  nil,
 					"postings":  nil,
 					"reverted":  false,
@@ -174,7 +174,7 @@ func TestBulk(t *testing.T) {
 			}]`,
 			expectations: func(mockLedger *backend.MockLedger) {
 				mockLedger.EXPECT().
-					DeleteMetadata(gomock.Any(), command.Parameters{}, ledger.MetaTargetTypeTransaction, big.NewInt(1), "foo").
+					DeleteMetadata(gomock.Any(), writer.Parameters{}, ledger.MetaTargetTypeTransaction, big.NewInt(1), "foo").
 					Return(nil)
 			},
 			expectResults: []v2.Result{{
@@ -217,12 +217,12 @@ func TestBulk(t *testing.T) {
 			]`,
 			expectations: func(mockLedger *backend.MockLedger) {
 				mockLedger.EXPECT().
-					SaveMeta(gomock.Any(), command.Parameters{}, ledger.MetaTargetTypeAccount, "world", metadata.Metadata{
+					SaveMeta(gomock.Any(), writer.Parameters{}, ledger.MetaTargetTypeAccount, "world", metadata.Metadata{
 						"foo": "bar",
 					}).
 					Return(nil)
 				mockLedger.EXPECT().
-					SaveMeta(gomock.Any(), command.Parameters{}, ledger.MetaTargetTypeAccount, "world", metadata.Metadata{
+					SaveMeta(gomock.Any(), writer.Parameters{}, ledger.MetaTargetTypeAccount, "world", metadata.Metadata{
 						"foo2": "bar2",
 					}).
 					Return(errors.New("unexpected error"))
@@ -275,17 +275,17 @@ func TestBulk(t *testing.T) {
 			},
 			expectations: func(mockLedger *backend.MockLedger) {
 				mockLedger.EXPECT().
-					SaveMeta(gomock.Any(), command.Parameters{}, ledger.MetaTargetTypeAccount, "world", metadata.Metadata{
+					SaveMeta(gomock.Any(), writer.Parameters{}, ledger.MetaTargetTypeAccount, "world", metadata.Metadata{
 						"foo": "bar",
 					}).
 					Return(nil)
 				mockLedger.EXPECT().
-					SaveMeta(gomock.Any(), command.Parameters{}, ledger.MetaTargetTypeAccount, "world", metadata.Metadata{
+					SaveMeta(gomock.Any(), writer.Parameters{}, ledger.MetaTargetTypeAccount, "world", metadata.Metadata{
 						"foo2": "bar2",
 					}).
 					Return(errors.New("unexpected error"))
 				mockLedger.EXPECT().
-					SaveMeta(gomock.Any(), command.Parameters{}, ledger.MetaTargetTypeAccount, "world", metadata.Metadata{
+					SaveMeta(gomock.Any(), writer.Parameters{}, ledger.MetaTargetTypeAccount, "world", metadata.Metadata{
 						"foo3": "bar3",
 					}).
 					Return(nil)
@@ -326,6 +326,13 @@ func TestBulk(t *testing.T) {
 			}
 
 			ret, _ := sharedapi.DecodeSingleResponse[[]v2.Result](t, rec.Body)
+			ret = collectionutils.Map(ret, func(from v2.Result) v2.Result {
+				switch data := from.Data.(type) {
+				case map[string]any:
+					delete(data, "insertedAt")
+				}
+				return from
+			})
 			require.Equal(t, testCase.expectResults, ret)
 		})
 	}

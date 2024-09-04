@@ -1,6 +1,7 @@
 package v1
 
 import (
+	ledgercontroller "github.com/formancehq/ledger/internal/controller/ledger"
 	"math/big"
 	"net/http"
 
@@ -9,7 +10,6 @@ import (
 	"github.com/formancehq/stack/libs/go-libs/bun/bunpaginate"
 
 	"github.com/formancehq/ledger/internal/api/backend"
-	"github.com/formancehq/ledger/internal/storage/ledgerstore"
 	sharedapi "github.com/formancehq/stack/libs/go-libs/api"
 	"github.com/formancehq/stack/libs/go-libs/query"
 )
@@ -36,7 +36,7 @@ func getBalancesAggregated(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := ledgerstore.NewGetAggregatedBalancesQuery(*pitFilter, queryBuilder,
+	query := ledgercontroller.NewGetAggregatedBalancesQuery(*pitFilter, queryBuilder,
 		// notes(gfyrag): if pit is not specified, always use insertion date to be backward compatible
 		r.URL.Query().Get("pit") == "" || sharedapi.QueryParamBool(r, "useInsertionDate") || sharedapi.QueryParamBool(r, "use_insertion_date"))
 
@@ -52,13 +52,13 @@ func getBalancesAggregated(w http.ResponseWriter, r *http.Request) {
 func getBalances(w http.ResponseWriter, r *http.Request) {
 	l := backend.LedgerFromContext(r.Context())
 
-	q, err := bunpaginate.Extract[ledgerstore.GetAccountsQuery](r, func() (*ledgerstore.GetAccountsQuery, error) {
+	q, err := bunpaginate.Extract[ledgercontroller.GetAccountsQuery](r, func() (*ledgercontroller.GetAccountsQuery, error) {
 		options, err := getPaginatedQueryOptionsOfPITFilterWithVolumes(r)
 		if err != nil {
 			return nil, err
 		}
 		options.QueryBuilder, err = buildAccountsFilterQuery(r)
-		return pointer.For(ledgerstore.NewGetAccountsQuery(*options)), nil
+		return pointer.For(ledgercontroller.NewGetAccountsQuery(*options)), nil
 	})
 	if err != nil {
 		sharedapi.BadRequest(w, ErrValidation, err)

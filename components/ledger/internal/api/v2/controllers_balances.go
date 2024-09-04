@@ -1,10 +1,10 @@
 package v2
 
 import (
+	"github.com/formancehq/ledger/internal/controller/ledger"
 	"net/http"
 
 	"github.com/formancehq/ledger/internal/api/backend"
-	"github.com/formancehq/ledger/internal/storage/ledgerstore"
 	sharedapi "github.com/formancehq/stack/libs/go-libs/api"
 )
 
@@ -23,12 +23,12 @@ func getBalancesAggregated(w http.ResponseWriter, r *http.Request) {
 	}
 
 	balances, err := backend.LedgerFromContext(r.Context()).
-		GetAggregatedBalances(r.Context(), ledgerstore.NewGetAggregatedBalancesQuery(
+		GetAggregatedBalances(r.Context(), ledger.NewGetAggregatedBalancesQuery(
 			*pitFilter, queryBuilder, sharedapi.QueryParamBool(r, "use_insertion_date") || sharedapi.QueryParamBool(r, "useInsertionDate")))
 	if err != nil {
 		switch {
-		case ledgerstore.IsErrInvalidQuery(err):
-			sharedapi.BadRequest(w, ErrValidation, err)
+		//case ledger.IsErrInvalidQuery(err):
+		//	sharedapi.BadRequest(w, ErrValidation, err)
 		default:
 			sharedapi.InternalServerError(w, r, err)
 		}

@@ -1,16 +1,15 @@
 package v1
 
 import (
+	ledgercontroller "github.com/formancehq/ledger/internal/controller/ledger"
 	"net/http"
 
 	"github.com/formancehq/stack/libs/go-libs/bun/bunpaginate"
 	"github.com/go-chi/chi/v5"
 
 	"github.com/formancehq/ledger/internal/api/backend"
-	"github.com/formancehq/ledger/internal/engine"
 	"github.com/pkg/errors"
 
-	"github.com/formancehq/ledger/internal/storage/ledgerstore"
 	sharedapi "github.com/formancehq/stack/libs/go-libs/api"
 	"github.com/formancehq/stack/libs/go-libs/migrations"
 	"github.com/formancehq/stack/libs/go-libs/query"
@@ -80,7 +79,7 @@ func buildGetLogsQuery(r *http.Request) (query.Builder, error) {
 func getLogs(w http.ResponseWriter, r *http.Request) {
 	l := backend.LedgerFromContext(r.Context())
 
-	query := ledgerstore.GetLogsQuery{}
+	query := ledgercontroller.GetLogsQuery{}
 
 	if r.URL.Query().Get(QueryKeyCursor) != "" {
 		err := bunpaginate.UnmarshalCursor(r.URL.Query().Get(QueryKeyCursor), &query)
@@ -96,7 +95,7 @@ func getLogs(w http.ResponseWriter, r *http.Request) {
 			bunpaginate.WithMaxPageSize(MaxPageSize))
 		if err != nil {
 			switch {
-			case engine.IsStorageError(err):
+			case ledgercontroller.IsStorageError(err):
 				sharedapi.BadRequest(w, ErrValidation, err)
 			default:
 				sharedapi.InternalServerError(w, r, err)
@@ -110,7 +109,7 @@ func getLogs(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		query = ledgerstore.NewGetLogsQuery(ledgerstore.PaginatedQueryOptions[any]{
+		query = ledgercontroller.NewGetLogsQuery(ledgercontroller.PaginatedQueryOptions[any]{
 			QueryBuilder: qb,
 			PageSize:     uint64(pageSize),
 		})

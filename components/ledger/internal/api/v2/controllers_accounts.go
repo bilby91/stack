@@ -3,10 +3,9 @@ package v2
 import (
 	"encoding/json"
 	"fmt"
+	ledgercontroller "github.com/formancehq/ledger/internal/controller/ledger"
 	"net/http"
 	"net/url"
-
-	storageerrors "github.com/formancehq/ledger/internal/storage/sqlutils"
 
 	"github.com/formancehq/stack/libs/core/accounts"
 	"github.com/formancehq/stack/libs/go-libs/pointer"
@@ -16,7 +15,6 @@ import (
 
 	ledger "github.com/formancehq/ledger/internal"
 	"github.com/formancehq/ledger/internal/api/backend"
-	"github.com/formancehq/ledger/internal/storage/ledgerstore"
 	sharedapi "github.com/formancehq/stack/libs/go-libs/api"
 	"github.com/formancehq/stack/libs/go-libs/collectionutils"
 	"github.com/formancehq/stack/libs/go-libs/metadata"
@@ -32,11 +30,11 @@ func countAccounts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	count, err := l.CountAccounts(r.Context(), ledgerstore.NewGetAccountsQuery(*options))
+	count, err := l.CountAccounts(r.Context(), ledgercontroller.NewGetAccountsQuery(*options))
 	if err != nil {
 		switch {
-		case ledgerstore.IsErrInvalidQuery(err):
-			sharedapi.BadRequest(w, ErrValidation, err)
+		//case ledger.IsErrInvalidQuery(err):
+		//	sharedapi.BadRequest(w, ErrValidation, err)
 		default:
 			sharedapi.InternalServerError(w, r, err)
 		}
@@ -50,12 +48,12 @@ func countAccounts(w http.ResponseWriter, r *http.Request) {
 func getAccounts(w http.ResponseWriter, r *http.Request) {
 	l := backend.LedgerFromContext(r.Context())
 
-	query, err := bunpaginate.Extract[ledgerstore.GetAccountsQuery](r, func() (*ledgerstore.GetAccountsQuery, error) {
+	query, err := bunpaginate.Extract[ledgercontroller.GetAccountsQuery](r, func() (*ledgercontroller.GetAccountsQuery, error) {
 		options, err := getPaginatedQueryOptionsOfPITFilterWithVolumes(r)
 		if err != nil {
 			return nil, err
 		}
-		return pointer.For(ledgerstore.NewGetAccountsQuery(*options)), nil
+		return pointer.For(ledgercontroller.NewGetAccountsQuery(*options)), nil
 	})
 	if err != nil {
 		sharedapi.BadRequest(w, ErrValidation, err)
@@ -65,8 +63,8 @@ func getAccounts(w http.ResponseWriter, r *http.Request) {
 	cursor, err := l.GetAccountsWithVolumes(r.Context(), *query)
 	if err != nil {
 		switch {
-		case ledgerstore.IsErrInvalidQuery(err):
-			sharedapi.BadRequest(w, ErrValidation, err)
+		//case ledger.IsErrInvalidQuery(err):
+		//	sharedapi.BadRequest(w, ErrValidation, err)
 		default:
 			sharedapi.InternalServerError(w, r, err)
 		}
@@ -85,7 +83,7 @@ func getAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := ledgerstore.NewGetAccountQuery(param)
+	query := ledgercontroller.NewGetAccountQuery(param)
 	if collectionutils.Contains(r.URL.Query()["expand"], "volumes") {
 		query = query.WithExpandVolumes()
 	}
@@ -102,8 +100,8 @@ func getAccount(w http.ResponseWriter, r *http.Request) {
 	acc, err := l.GetAccountWithVolumes(r.Context(), query)
 	if err != nil {
 		switch {
-		case storageerrors.IsNotFoundError(err):
-			sharedapi.NotFound(w, err)
+		//case postgres.IsNotFoundError(err):
+		//	sharedapi.NotFound(w, err)
 		default:
 			sharedapi.InternalServerError(w, r, err)
 		}

@@ -2,10 +2,10 @@ package v2
 
 import (
 	"fmt"
+	ledgercontroller "github.com/formancehq/ledger/internal/controller/ledger"
 	"net/http"
 
 	"github.com/formancehq/ledger/internal/api/backend"
-	"github.com/formancehq/ledger/internal/storage/ledgerstore"
 	sharedapi "github.com/formancehq/stack/libs/go-libs/api"
 	"github.com/formancehq/stack/libs/go-libs/bun/bunpaginate"
 )
@@ -13,7 +13,7 @@ import (
 func getLogs(w http.ResponseWriter, r *http.Request) {
 	l := backend.LedgerFromContext(r.Context())
 
-	query := ledgerstore.GetLogsQuery{}
+	query := ledgercontroller.GetLogsQuery{}
 
 	if r.URL.Query().Get(QueryKeyCursor) != "" {
 		err := bunpaginate.UnmarshalCursor(r.URL.Query().Get(QueryKeyCursor), &query)
@@ -36,7 +36,7 @@ func getLogs(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		query = ledgerstore.NewGetLogsQuery(ledgerstore.PaginatedQueryOptions[any]{
+		query = ledgercontroller.NewGetLogsQuery(ledgercontroller.PaginatedQueryOptions[any]{
 			QueryBuilder: qb,
 			PageSize:     pageSize,
 		})

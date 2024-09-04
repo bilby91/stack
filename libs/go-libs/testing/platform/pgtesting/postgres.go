@@ -73,6 +73,19 @@ func (s *PostgresServer) GetDatabaseDSN(databaseName string) string {
 		s.Config.InitialUserPassword, s.GetHost(), s.Port, databaseName)
 }
 
+func (s *PostgresServer) setupDatabase(t TestingT, name string) {
+	db, err := sql.Open("postgres", s.GetDatabaseDSN(name))
+	require.NoError(t, err)
+	defer func() {
+		require.NoError(t, db.Close())
+	}()
+
+	for _, extension := range s.Config.Extensions {
+		_, err = db.ExecContext(sharedlogging.TestingContext(), fmt.Sprintf(`CREATE EXTENSION "%s"`, extension))
+		require.NoError(t, err)
+	}
+}
+
 func (s *PostgresServer) NewDatabase(t TestingT) *Database {
 	db, err := sql.Open("postgres", s.GetDSN())
 	require.NoError(t, err)
@@ -83,6 +96,8 @@ func (s *PostgresServer) NewDatabase(t TestingT) *Database {
 	databaseName := uuid.NewString()
 	_, err = db.ExecContext(sharedlogging.TestingContext(), fmt.Sprintf(`CREATE DATABASE "%s"`, databaseName))
 	require.NoError(t, err)
+
+	s.setupDatabase(t, databaseName)
 
 	if os.Getenv("NO_CLEANUP") != "true" {
 		t.Cleanup(func() {
@@ -110,6 +125,7 @@ type Config struct {
 	InitialUsername     string
 	StatusCheckInterval time.Duration
 	MaximumWaitingTime  time.Duration
+	Extensions          []string
 }
 
 func (c Config) validate() error {
@@ -128,41 +144,51 @@ func (c Config) validate() error {
 	return nil
 }
 
-type option func(opts *Config)
+type Option func(opts *Config)
 
-func WithInitialDatabaseName(name string) option {
+func WithInitialDatabaseName(name string) Option {
 	return func(opts *Config) {
 		opts.InitialDatabaseName = name
 	}
 }
 
-func WithInitialUser(username, pwd string) option {
+func WithInitialUser(username, pwd string) Option {
 	return func(opts *Config) {
 		opts.InitialUserPassword = pwd
 		opts.InitialUsername = username
 	}
 }
 
-func WithStatusCheckInterval(d time.Duration) option {
+func WithStatusCheckInterval(d time.Duration) Option {
 	return func(opts *Config) {
 		opts.StatusCheckInterval = d
 	}
 }
 
-func WithMaximumWaitingTime(d time.Duration) option {
+func WithMaximumWaitingTime(d time.Duration) Option {
 	return func(opts *Config) {
 		opts.MaximumWaitingTime = d
 	}
 }
 
-var defaultOptions = []option{
+func WithExtension(extensions ...string) Option {
+	return func(opts *Config) {
+		opts.Extensions = append(opts.Extensions, extensions...)
+	}
+}
+
+func WithPGStatsExtension() Option {
+	return WithExtension("pg_stat_statements")
+}
+
+var defaultOptions = []Option{
 	WithStatusCheckInterval(200 * time.Millisecond),
 	WithInitialUser("root", "root"),
 	WithMaximumWaitingTime(time.Minute),
 	WithInitialDatabaseName("formance"),
 }
 
-func CreatePostgresServer(t TestingT, pool *docker.Pool, opts ...option) *PostgresServer {
+func CreatePostgresServer(t TestingT, pool *docker.Pool, opts ...Option) *PostgresServer {
 	cfg := Config{}
 	for _, opt := range append(defaultOptions, opts...) {
 		opt(&cfg)
@@ -184,6 +210,8 @@ func CreatePostgresServer(t TestingT, pool *docker.Pool, opts ...option) *Postgr
 				"-c", "enable_partition_pruning=on",
 				"-c", "enable_partitionwise_join=on",
 				"-c", "enable_partitionwise_aggregate=on",
+				"-c", "shared_preload_libraries=auto_explain,pg_stat_statements",
+				"-c", "log_lock_waits=on",
 			},
 		},
 		CheckFn: func(ctx context.Context, resource *dockertest.Resource) error {

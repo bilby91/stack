@@ -1,6 +1,7 @@
 package v1_test
 
 import (
+	ledgercontroller "github.com/formancehq/ledger/internal/controller/ledger"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -12,7 +13,6 @@ import (
 	ledger "github.com/formancehq/ledger/internal"
 	v1 "github.com/formancehq/ledger/internal/api/v1"
 	"github.com/formancehq/ledger/internal/opentelemetry/metrics"
-	"github.com/formancehq/ledger/internal/storage/ledgerstore"
 	sharedapi "github.com/formancehq/stack/libs/go-libs/api"
 	"github.com/formancehq/stack/libs/go-libs/auth"
 	"github.com/formancehq/stack/libs/go-libs/query"
@@ -26,7 +26,7 @@ func TestGetBalancesAggregated(t *testing.T) {
 	type testCase struct {
 		name        string
 		queryParams url.Values
-		expectQuery ledgerstore.GetAggregatedBalanceQuery
+		expectQuery ledgercontroller.GetAggregatedBalanceQuery
 	}
 
 	now := time.Now()
@@ -34,7 +34,7 @@ func TestGetBalancesAggregated(t *testing.T) {
 	testCases := []testCase{
 		{
 			name: "nominal",
-			expectQuery: ledgerstore.GetAggregatedBalanceQuery{
+			expectQuery: ledgercontroller.GetAggregatedBalanceQuery{
 				UseInsertionDate: true,
 			},
 		},
@@ -43,7 +43,7 @@ func TestGetBalancesAggregated(t *testing.T) {
 			queryParams: url.Values{
 				"address": []string{"foo"},
 			},
-			expectQuery: ledgerstore.GetAggregatedBalanceQuery{
+			expectQuery: ledgercontroller.GetAggregatedBalanceQuery{
 				QueryBuilder:     query.Match("address", "foo"),
 				UseInsertionDate: true,
 			},
@@ -53,8 +53,8 @@ func TestGetBalancesAggregated(t *testing.T) {
 			queryParams: url.Values{
 				"pit": []string{now.Format(time.RFC3339Nano)},
 			},
-			expectQuery: ledgerstore.GetAggregatedBalanceQuery{
-				PITFilter: ledgerstore.PITFilter{
+			expectQuery: ledgercontroller.GetAggregatedBalanceQuery{
+				PITFilter: ledgercontroller.PITFilter{
 					PIT: &now,
 				},
 			},
@@ -65,8 +65,8 @@ func TestGetBalancesAggregated(t *testing.T) {
 				"pit":              []string{now.Format(time.RFC3339Nano)},
 				"useInsertionDate": []string{"true"},
 			},
-			expectQuery: ledgerstore.GetAggregatedBalanceQuery{
-				PITFilter: ledgerstore.PITFilter{
+			expectQuery: ledgercontroller.GetAggregatedBalanceQuery{
+				PITFilter: ledgercontroller.PITFilter{
 					PIT: &now,
 				},
 				UseInsertionDate: true,
