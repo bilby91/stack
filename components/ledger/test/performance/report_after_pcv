@@ -1,0 +1,59 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/formancehq/ledger/test/performance
+BenchmarkWrite/world_to_bank/testserver         	     282	   4402464 ns/op	         3.000 ms/transaction	       227.1 t/s
+--- BENCH: BenchmarkWrite/world_to_bank/testserver
+    server.go:176: Start testing server
+    server.go:177: Starting application with flags: serve --bind :0 --postgres-uri postgresql://root:root@127.0.0.1:33882/907979e5-5f0c-4486-a348-358fdbf935f1?sslmode=disable --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s --postgres-max-idle-conns 100 --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s
+    write_test.go:270: Starting application with flags: serve --bind :0 --postgres-uri postgresql://root:root@127.0.0.1:33882/907979e5-5f0c-4486-a348-358fdbf935f1?sslmode=disable --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s --postgres-max-idle-conns 100 --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s
+    write_test.go:149: Longest transaction: 1 (19.819084ms)
+    server.go:179: Stop testing server
+    server.go:176: Start testing server
+    server.go:177: Starting application with flags: serve --bind :0 --postgres-uri postgresql://root:root@127.0.0.1:33882/643d4972-7f55-4f60-ba20-d69916427d27?sslmode=disable --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s --postgres-max-idle-conns 100 --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s
+    write_test.go:270: Starting application with flags: serve --bind :0 --postgres-uri postgresql://root:root@127.0.0.1:33882/643d4972-7f55-4f60-ba20-d69916427d27?sslmode=disable --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s --postgres-max-idle-conns 100 --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s
+    write_test.go:149: Longest transaction: 1 (11.789833ms)
+    server.go:179: Stop testing server
+	... [output truncated]
+BenchmarkWrite/world_to_bank/core               	     308	   9504116 ns/op	         9.000 ms/transaction	       105.2 t/s
+--- BENCH: BenchmarkWrite/world_to_bank/core
+    write_test.go:149: Longest transaction: 1 (6.893833ms)
+    write_test.go:149: Longest transaction: 1 (9.1045ms)
+    write_test.go:149: Longest transaction: 107 (143.853708ms)
+BenchmarkWrite/world_to_not_existing_destination/testserver         	     238	   4856353 ns/op	         4.000 ms/transaction	       205.7 t/s
+--- BENCH: BenchmarkWrite/world_to_not_existing_destination/testserver
+    server.go:176: Start testing server
+    server.go:177: Starting application with flags: serve --bind :0 --postgres-uri postgresql://root:root@127.0.0.1:33882/98a25619-91a1-4bce-af7f-567baaa1639c?sslmode=disable --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s --postgres-max-idle-conns 100 --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s
+    write_test.go:270: Starting application with flags: serve --bind :0 --postgres-uri postgresql://root:root@127.0.0.1:33882/98a25619-91a1-4bce-af7f-567baaa1639c?sslmode=disable --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s --postgres-max-idle-conns 100 --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s
+    write_test.go:149: Longest transaction: 1 (10.344792ms)
+    server.go:179: Stop testing server
+    server.go:176: Start testing server
+    server.go:177: Starting application with flags: serve --bind :0 --postgres-uri postgresql://root:root@127.0.0.1:33882/77ac79de-09de-4a5c-a557-41384fd19354?sslmode=disable --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s --postgres-max-idle-conns 100 --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s
+    write_test.go:270: Starting application with flags: serve --bind :0 --postgres-uri postgresql://root:root@127.0.0.1:33882/77ac79de-09de-4a5c-a557-41384fd19354?sslmode=disable --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s --postgres-max-idle-conns 100 --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s
+    write_test.go:149: Longest transaction: 49 (15.510917ms)
+    server.go:179: Stop testing server
+	... [output truncated]
+BenchmarkWrite/world_to_not_existing_destination/core               	     290	   4512354 ns/op	         4.000 ms/transaction	       221.5 t/s
+--- BENCH: BenchmarkWrite/world_to_not_existing_destination/core
+    write_test.go:149: Longest transaction: 1 (9.88ms)
+    write_test.go:149: Longest transaction: 26 (14.769875ms)
+    write_test.go:149: Longest transaction: 5 (19.295167ms)
+BenchmarkWrite/not_existing_source_to_not_existing_destination/testserver         	     250	   4776138 ns/op	         4.000 ms/transaction	       209.3 t/s
+--- BENCH: BenchmarkWrite/not_existing_source_to_not_existing_destination/testserver
+    server.go:176: Start testing server
+    server.go:177: Starting application with flags: serve --bind :0 --postgres-uri postgresql://root:root@127.0.0.1:33882/93861f4a-24c6-4acf-b753-e4aab423d5b0?sslmode=disable --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s --postgres-max-idle-conns 100 --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s
+    write_test.go:270: Starting application with flags: serve --bind :0 --postgres-uri postgresql://root:root@127.0.0.1:33882/93861f4a-24c6-4acf-b753-e4aab423d5b0?sslmode=disable --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s --postgres-max-idle-conns 100 --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s
+    write_test.go:149: Longest transaction: 1 (13.181166ms)
+    server.go:179: Stop testing server
+    server.go:176: Start testing server
+    server.go:177: Starting application with flags: serve --bind :0 --postgres-uri postgresql://root:root@127.0.0.1:33882/34f64a46-4faf-4f57-ab69-824bf9626e6c?sslmode=disable --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s --postgres-max-idle-conns 100 --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s
+    write_test.go:270: Starting application with flags: serve --bind :0 --postgres-uri postgresql://root:root@127.0.0.1:33882/34f64a46-4faf-4f57-ab69-824bf9626e6c?sslmode=disable --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s --postgres-max-idle-conns 100 --postgres-max-open-conns 100 --postgres-conn-max-idle-time 1m0s
+    write_test.go:149: Longest transaction: 1 (18.103875ms)
+    server.go:179: Stop testing server
+	... [output truncated]
+BenchmarkWrite/not_existing_source_to_not_existing_destination/core               	     265	   4495656 ns/op	         4.000 ms/transaction	       222.4 t/s
+--- BENCH: BenchmarkWrite/not_existing_source_to_not_existing_destination/core
+    write_test.go:149: Longest transaction: 1 (8.498291ms)
+    write_test.go:149: Longest transaction: 36 (10.763875ms)
+    write_test.go:149: Longest transaction: 175 (12.974833ms)
+PASS
+ok  	github.com/formancehq/ledger/test/performance	19.318s

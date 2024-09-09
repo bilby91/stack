@@ -13,6 +13,15 @@ import (
 	"github.com/uptrace/bun"
 )
 
+type Balances struct {
+	bun.BaseModel `bun:"balances"`
+
+	Ledger  string   `bun:"ledger,type:varchar"`
+	Account string   `bun:"account,type:varchar"`
+	Asset   string   `bun:"asset,type:varchar"`
+	Balance *big.Int `bun:"balance,type:numeric"`
+}
+
 func (s *Store) GetAggregatedBalances(ctx context.Context, q ledgercontroller.GetAggregatedBalanceQuery) (ledger.BalancesByAssets, error) {
 
 	var (
@@ -154,4 +163,25 @@ func (s *Store) GetBalance(ctx context.Context, address, asset string) (*big.Int
 	}
 
 	return v.Balance, nil
+}
+
+func (s *Store) AddToBalance(ctx context.Context, addr, asset string, amount *big.Int) (*big.Int, error) {
+	r := &Balances{
+		Ledger:  s.ledgerName,
+		Account: addr,
+		Asset:   asset,
+		Balance: amount,
+	}
+	_, err := s.db.NewInsert().
+		Model(r).
+		ModelTableExpr(s.PrefixWithBucket("balances")).
+		On("conflict (ledger, account, asset) do update").
+		Set("balance = balances.balance + excluded.balance").
+		Returning("balance").
+		Exec(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.Balance, err
 }

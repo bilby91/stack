@@ -159,3 +159,18 @@ func TestGetBalancesAggregated(t *testing.T) {
 		}, ret)
 	})
 }
+
+func TestAddToBalance(t *testing.T) {
+	t.Parallel()
+
+	store := newLedgerStore(t)
+	ctx := logging.TestingContext()
+
+	balance, err := store.AddToBalance(ctx, "world", "USD/2", big.NewInt(-100))
+	require.NoError(t, err)
+	require.Equal(t, int64(-100), balance.Int64())
+
+	balance, err = store.AddToBalance(ctx, "world", "USD/2", big.NewInt(50))
+	require.NoError(t, err)
+	require.Equal(t, int64(-50), balance.Int64())
+}

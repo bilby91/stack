@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+	"math/big"
 	"slices"
 )
 
@@ -94,6 +95,7 @@ func (w *Writer) CreateTransaction(ctx context.Context, parameters Parameters, r
 	log, err := w.withTX(ctx, parameters, func(sqlTX TX) (*ledger.Log, error) {
 
 		if len(machineInit.BoundedSources) > 0 {
+			// TODO: remove lock, and use SELECT FOR UPDATE
 			_, latency, err := tracer.TraceWithLatency(ctx, "LockAccounts", func(ctx context.Context) (*struct{}, error) {
 				return nil, sqlTX.LockAccounts(ctx, machineInit.BoundedSources...)
 			}, func(ctx context.Context, _ *struct{}) {
@@ -167,19 +169,19 @@ func (w *Writer) CreateTransaction(ctx context.Context, parameters Parameters, r
 			}
 		}
 
-		for _, account := range transaction.GetMoves().InvolvedAccounts() {
-			_, latency, err = tracer.TraceWithLatency(ctx, "LockAccounts", func(ctx context.Context) (struct{}, error) {
-				return struct{}{}, sqlTX.LockAccounts(ctx, account)
-			}, func(ctx context.Context, _ struct{}) {
-				trace.SpanFromContext(ctx).SetAttributes(
-					attribute.StringSlice("accounts", transaction.GetMoves().InvolvedAccounts()),
-				)
-			})
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to acquire account lock on %s", account)
-			}
-			logger.WithField("latency", latency.String()).Debugf("account locked: %s", account)
-		}
+		//for _, account := range transaction.GetMoves().InvolvedAccounts() {
+		//	_, latency, err = tracer.TraceWithLatency(ctx, "LockAccounts", func(ctx context.Context) (struct{}, error) {
+		//		return struct{}{}, sqlTX.LockAccounts(ctx, account)
+		//	}, func(ctx context.Context, _ struct{}) {
+		//		trace.SpanFromContext(ctx).SetAttributes(
+		//			attribute.StringSlice("accounts", transaction.GetMoves().InvolvedAccounts()),
+		//		)
+		//	})
+		//	if err != nil {
+		//		return nil, errors.Wrapf(err, "failed to acquire account lock on %s", account)
+		//	}
+		//	logger.WithField("latency", latency.String()).Debugf("account locked: %s", account)
+		//}
 
 		_, latency, err = tracer.TraceWithLatency(ctx, "InsertMoves", func(ctx context.Context) (struct{}, error) {
 			return struct{}{}, sqlTX.InsertMoves(ctx, transaction.GetMoves()...)
@@ -187,8 +189,31 @@ func (w *Writer) CreateTransaction(ctx context.Context, parameters Parameters, r
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to insert moves")
 		}
-
 		logger.WithField("latency", latency.String()).Debugf("moves inserted")
+
+		// TODO: merge move for the same account
+		for _, move := range transaction.GetMoves() {
+			newBalance, latency, err := tracer.TraceWithLatency(ctx, "AddToBalance", func(ctx context.Context) (*big.Int, error) {
+				return sqlTX.AddToBalance(ctx, move.Account, move.Asset, move.Amount)
+			}, func(ctx context.Context, newBalance *big.Int) {
+				trace.SpanFromContext(ctx).SetAttributes(
+					attribute.String("new_balance", newBalance.String()),
+					attribute.String("account", move.Account),
+					attribute.String("asset", move.Asset),
+					attribute.String("amount", move.Amount.String()),
+				)
+			})
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to update balance")
+			}
+			logger.
+				WithField("latency", latency.String()).
+				WithField("account", move.Account).
+				WithField("asset", move.Asset).
+				WithField("amount", move.Amount).
+				WithField("new_balance", newBalance.String()).
+				Debugf("balance updated")
+		}
 
 		// notes(gfyrag): force date to be zero to let postgres fill it
 		// todo: clean that

@@ -42,8 +42,10 @@ func (s *Store) InsertMoves(ctx context.Context, moves ...ledger.Move) error {
 		}
 	}))
 
+	// todo: rewrite, we just need to basically insert moves
 	_, err := s.db.NewInsert().
 		With("_rows", s.db.NewValues(mappedMoves)).
+		//todo: we should already have the sequence when using UpsertAccount
 		With("_account_sequences",
 			s.db.NewSelect().
 				Column("seq", "address").
@@ -54,22 +56,22 @@ func (s *Store) InsertMoves(ctx context.Context, moves ...ledger.Move) error {
 			s.db.NewSelect().
 				ColumnExpr("_rows.*").
 				ColumnExpr("_account_sequences.seq as accounts_seq").
-				ColumnExpr("("+
-					"coalesce(((last_move_by_seq.post_commit_volumes).inputs), 0) + case when is_source then 0 else amount end, "+
-					"coalesce(((last_move_by_seq.post_commit_volumes).outputs), 0) + case when is_source then amount else 0 end"+
-					")::"+s.PrefixWithBucket("volumes")+" as post_commit_volumes").
+				//ColumnExpr("("+
+				//	"coalesce(((last_move_by_seq.post_commit_volumes).inputs), 0) + case when is_source then 0 else amount end, "+
+				//	"coalesce(((last_move_by_seq.post_commit_volumes).outputs), 0) + case when is_source then amount else 0 end"+
+				//	")::"+s.PrefixWithBucket("volumes")+" as post_commit_volumes").
 				Join("join _account_sequences on _account_sequences.address = address").
-				Join("left join lateral ("+
-					s.db.NewSelect().
-						ColumnExpr("last_move.post_commit_volumes").
-						ModelTableExpr(s.PrefixWithBucketUsingModel(Move{})+" as last_move").
-						Where("_rows.account_address = last_move.account_address").
-						Where("_rows.asset = last_move.asset").
-						Where("_rows.ledger = last_move.ledger").
-						Order("seq desc").
-						Limit(1).
-						String()+
-					") last_move_by_seq on true").
+				//Join("left join lateral ("+
+				//	s.db.NewSelect().
+				//		ColumnExpr("last_move.post_commit_volumes").
+				//		ModelTableExpr(s.PrefixWithBucketUsingModel(Move{})+" as last_move").
+				//		Where("_rows.account_address = last_move.account_address").
+				//		Where("_rows.asset = last_move.asset").
+				//		Where("_rows.ledger = last_move.ledger").
+				//		Order("seq desc").
+				//		Limit(1).
+				//		String()+
+				//	") last_move_by_seq on true").
 				Table("_rows"),
 		).
 		Model(&Move{}).
@@ -84,7 +86,7 @@ func (s *Store) InsertMoves(ctx context.Context, moves ...ledger.Move) error {
 			"insertion_date",
 			"effective_date",
 			"accounts_seq",
-			"post_commit_volumes",
+			//"post_commit_volumes",
 		).
 		ModelTableExpr(s.PrefixWithBucketUsingModel(Move{})).
 		Table("_computed_rows").

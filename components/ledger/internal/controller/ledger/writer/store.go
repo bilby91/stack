@@ -6,6 +6,7 @@ import (
 	ledger "github.com/formancehq/ledger/internal"
 	"github.com/formancehq/stack/libs/go-libs/metadata"
 	"github.com/uptrace/bun"
+	"math/big"
 )
 
 //go:generate mockgen -source store.go -destination store_generated.go -package writer . TX
@@ -28,6 +29,7 @@ type TX interface {
 	Commit(ctx context.Context) error
 	Rollback(ctx context.Context) error
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	AddToBalance(ctx context.Context, addr, asset string, amount *big.Int) (*big.Int, error)
 }
 
 //go:generate mockgen -source store.go -destination store_generated.go -package writer . Store
